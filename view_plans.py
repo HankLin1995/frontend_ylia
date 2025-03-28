@@ -9,9 +9,13 @@ def get_plans_df():
     plans = get_plans()
 
     df = pd.DataFrame(plans)
+
+
     # 使用 ISO8601 格式解析時間，並只顯示日期部分
     df["CreateTime"] = pd.to_datetime(df["CreateTime"], format='ISO8601').dt.strftime('%Y-%m-%d')
     df.columns = ["計畫編號", "計畫名稱", "年度", "經費來源", "核定文號", "附件", "創建時間"]
+    df=df[["年度","計畫編號", "計畫名稱", "核定文號", "創建時間"]]
+    df=df.sort_values(by="計畫編號",ascending=False)
 
     return df
 
@@ -55,7 +59,14 @@ def update_plan_ui():
 
     if st.button("更新"):
         response = update_plan(plan_id,data,file)
-        st.success("更新成功")
+
+        st.write(response)
+
+        if response["PlanID"]:
+            st.toast("更新成功",icon="✅")
+        else:
+            st.toast("更新失敗",icon="❌")
+
         time.sleep(1)
         st.rerun()
 
@@ -70,7 +81,14 @@ def delete_plan_ui():
 
 df=get_plans_df()
 
-st.dataframe(df,use_container_width=True,hide_index=True)
+st.dataframe(df,hide_index=True)
+
+#group by year
+# df_grouped = df.groupby("年度")
+
+# for year, group in df_grouped:
+#     # st.subheader(f"{year}年計畫清單")
+#     st.dataframe(group,hide_index=True)
 
 if st.button("📝新增計畫"):
     add_plan_ui()
