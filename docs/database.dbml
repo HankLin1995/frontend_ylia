@@ -1,0 +1,50 @@
+// 計畫 Table
+Table Plan {
+  PlanID string [primary key] // 計畫編號(PK)
+  Year int // 年度
+  PlanName string // 計畫名稱
+  FundingSource string // 經費來源
+  ApprovalDoc string // 核定公文
+  PDFPath string // 公文PDF儲存路徑
+  CreateTime timestamp // 建立時間
+}
+
+// 工程 Table
+Table Project {
+  ProjectID string [primary key] // 工程編號(PK)
+  PlanID string [ref: > Plan.PlanID] // 計畫編號(FK)
+  ProjectName string // 工程名稱
+  Workstation string // 工作站
+  CurrentStatus string // 目前狀態
+  CreateTime timestamp // 建立時間
+}
+
+// 審查 Table
+Table Review {
+  ID string [primary key] // ID(PK)
+  ProjectID string [ref: > Project.ProjectID] // 工程編號(FK)
+  ReviewStage string // 審查階段
+  Reviewer string // 審查人員
+  ReviewTime timestamp // 審查時間
+}
+
+// 審查金額明細 Table
+Table ReviewAmountDetail {
+  ID string [primary key] // ID(PK)
+  ReviewID string [ref: > Review.ID] // 審查ID(FK)
+  Name string // 名稱
+  Amount decimal // 金額
+}
+
+// 工程日期總表 Table
+Table ProjectDateSummary {
+  ProjectID string [pk, ref: > Project.ProjectID] // 工程編號(PK)
+  ComplaintDate timestamp // 陳情日期
+  SubmissionDate timestamp // 提報日期
+  SurveyDate timestamp // 測設日期
+  ApprovalDate timestamp // 核准日期
+  DraftCompletionDate timestamp // 初稿完成日期
+  BudgetApprovalDate timestamp // 預算書核准日期
+  TenderDate timestamp // 招標日期
+  UpdateTime timestamp // 更新時間
+}
