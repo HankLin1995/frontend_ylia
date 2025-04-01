@@ -125,11 +125,54 @@ def update_workstation_content(exist_workstation):
     else:
         selected_workstation = st.selectbox("選擇",df_workstations["Name"])
     
-    if st.button("確定更新"):
+    if st.button("更新工作站",key="update_workstation"):
         data={
             "Workstation": selected_workstation
         }
         response = update_project(selected_project_id,data)
+        if response["ProjectID"]:
+            st.toast("更新成功",icon="✅")
+        else:
+            st.toast("更新失敗",icon="❌")
+        time.sleep(1)
+        st.rerun()
+
+def update_dates_content(project_id):
+
+# // 工程日期總表 Table
+# Table ProjectDateSummary {
+#   ProjectID string [pk, ref: > Project.ProjectID] // 工程編號(PK)
+#   ComplaintDate timestamp // 陳情日期
+#   SubmissionDate timestamp // 提報日期
+#   SurveyDate timestamp // 測設日期
+#   ApprovalDate timestamp // 計畫核准日期
+#   DraftCompletionDate timestamp // 初稿完成日期
+#   BudgetApprovalDate timestamp // 預算書核准日期
+#   TenderDate timestamp // 招標日期
+#   AwardDate timestamp // 決標日期
+#   UpdateTime timestamp // 更新時間
+# }
+
+    st.markdown("#### 🕰️工程日期")
+
+    col1,col2,col3=st.columns(3)
+
+    with col1:
+        submission_date = st.date_input("提報日期" )
+
+    with col2:
+        draft_completion_date = st.date_input("初稿完成日期" )
+    
+    with col3:
+        budget_approval_date = st.date_input("預算書核准日期")
+
+    if st.button("更新日期",key="update_dates"):
+        data={
+            "SubmissionDate": submission_date,
+            "DraftCompletionDate": draft_completion_date,
+            "BudgetApprovalDate": budget_approval_date
+        }
+        response = create_project_dates(project_id,data)
         if response["ProjectID"]:
             st.toast("更新成功",icon="✅")
         else:
@@ -157,6 +200,9 @@ with tab2:
     
     with st.container(border=True):
         update_workstation_content(project["Workstation"])
+
+    with st.container(border=True):
+        update_dates_content(project["ProjectID"])
 
     
 

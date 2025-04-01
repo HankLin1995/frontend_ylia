@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 from view_plans import get_plans_df
-from api import get_projects,create_project,get_plan,delete_project
+from api import get_projects,create_project,get_plan,delete_project,create_project_dates
 
 @st.dialog("🗂️ 匯入工程明細")
 def import_excel():
@@ -93,6 +93,17 @@ def original_view(df):
                 st.toast("刪除成功",icon="✅")
             else:
                 st.toast("刪除失敗",icon="❌")
+        st.rerun()
+
+    if st.button("新增日期索引"):
+        for project in filtered_df.to_dict(orient='records'):
+            project_id=project["工程編號"]
+            response = create_project_dates(project_id,{})
+            if response["ProjectID"]:
+                st.toast("新增成功",icon="✅")
+            else:
+                st.toast("新增失敗",icon="❌")
+        time.sleep(1)
         st.rerun()
 
 df = get_projects_df()

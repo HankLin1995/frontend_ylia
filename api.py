@@ -68,3 +68,7 @@ def create_workstation(division,station):
 def get_workstations():
     response = requests.get(f"{BASE_URL}/workstations/")
     return response.json()
+
+def create_project_dates(project_id,data):
+    response = requests.post(f"{BASE_URL}/projects/{project_id}/dates", json=data)
+    return response.json()
