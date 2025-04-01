@@ -42,9 +42,17 @@ Table ProjectDateSummary {
   ComplaintDate timestamp // 陳情日期
   SubmissionDate timestamp // 提報日期
   SurveyDate timestamp // 測設日期
-  ApprovalDate timestamp // 核准日期
+  ApprovalDate timestamp // 計畫核准日期
   DraftCompletionDate timestamp // 初稿完成日期
   BudgetApprovalDate timestamp // 預算書核准日期
   TenderDate timestamp // 招標日期
+  AwardDate timestamp // 決標日期
   UpdateTime timestamp // 更新時間
+}
+
+// 工作站 Table
+Table Workstation {
+  ID string [primary key] // ID(PK)
+  Name string // 工作站名稱
+  Division string // 所屬分處
 }

@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 from view_plans import get_plans_df
-from api import get_projects,create_project,get_plan
+from api import get_projects,create_project,get_plan,delete_project
 
 @st.dialog("🗂️ 匯入工程明細")
 def import_excel():
@@ -56,24 +56,55 @@ def import_excel():
             st.rerun()
             
 
+@st.cache_data
 def get_projects_df():
     projects = get_projects()
     df = pd.DataFrame(projects)
     df.columns=["工程編號","計畫編號","工程名稱","工作站","核定金額","目前狀態","建立時間"]
     return df
 
-st.subheader("📅工程清單")
+def group_view(df):
+    df_grouped = df.groupby("計畫編號")
+    for plan_id, group in df_grouped:
+        plan=get_plan(plan_id)
+        plan_name=plan["PlanName"]
+        with st.expander(f"🟢 {plan_name}-{plan_id}"):
+            st.dataframe(group,hide_index=True)
+
+def original_view(df):
+    event = st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        on_select="rerun",
+        selection_mode="multi-row",
+    )
+
+    selected_rows = event.selection.rows
+    filtered_df = df.iloc[selected_rows]
+
+    #delete selected rows
+    if st.button("刪除"):
+        for project in filtered_df.to_dict(orient='records'):
+            project_id=project["工程編號"]
+            response = delete_project(project_id)
+            #message:Project deleted successfully
+            if response["message"] == "Project deleted successfully":
+                st.toast("刪除成功",icon="✅")
+            else:
+                st.toast("刪除失敗",icon="❌")
+        st.rerun()
 
 df = get_projects_df()
 
-#group by 計畫編號
-df_grouped = df.groupby("計畫編號")
+st.subheader("📅工程清單")
 
-for plan_id, group in df_grouped:
-    plan=get_plan(plan_id)
-    plan_name=plan["PlanName"]
-    with st.expander(f"🟢 {plan_name}-{plan_id}"):
-        st.dataframe(group,hide_index=True)
+view_type=st.sidebar.radio("查看方式",("計畫群組","原始資料"))
+
+if view_type=="計畫群組":
+    group_view(df)
+else:
+    original_view(df)
 
 if st.sidebar.button("🗂️ 匯入工程明細"):
     import_excel()
