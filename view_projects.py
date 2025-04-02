@@ -2,16 +2,38 @@ import streamlit as st
 import pandas as pd
 import time
 from view_plans import get_plans_df
-from api import get_projects,create_project,get_plan,delete_project,create_project_dates
+from api import (
+    get_projects,
+    create_project,
+    get_plan,
+    delete_project,
+    create_project_dates
+)
+
 
 @st.dialog("🗂️ 匯入工程明細")
 def import_excel():
 
     plan_id = st.selectbox("計畫編號",get_plans_df()["計畫編號"])
+    approval_doc=get_plan(plan_id)["ApprovalDoc"]
+    st.write(f"核定文號: {approval_doc}")
+    current_date=st.date_input("核定日期或提報日期")
 
     if plan_id:
         plan=get_plan(plan_id)
-        current_status="核定" if plan["ApprovalDoc"] else "提報"
+
+        if plan["ApprovalDoc"]:
+            current_status="核定"
+            project_date_data={
+                "ProjectID": None,
+                "ApprovalDate": current_date.strftime("%Y-%m-%d")
+            }
+        else:
+            current_status="提報"
+            project_date_data={
+                "ProjectID": None,
+                "SubmissionDate": current_date.strftime("%Y-%m-%d")
+            }
 
     file = st.file_uploader("選擇Excel檔案", type=["xlsx"])
 
@@ -25,10 +47,10 @@ def import_excel():
         df = df.iloc[3:]
 
         for _,col in df.iterrows():
-            if pd.notna(col[0]) :
-                project_id = col[0]
-                project_name = col[2]
-                project_budget = col[15] if pd.notna(col[15]) else 0
+            if pd.notna(col.iloc[0]) :
+                project_id = col.iloc[0]
+                project_name = col.iloc[2]
+                project_budget = col.iloc[15] if pd.notna(col.iloc[15]) else 0
                 project_budget = project_budget.replace(',', '') 
                 project_budget = int(project_budget)  
                 df_projects.append({
@@ -49,10 +71,28 @@ def import_excel():
         if st.button("新增工程"): 
             for project in df_projects.to_dict(orient='records'):
                 response = create_project(project["ProjectID"],project["PlanID"],project["ProjectName"],project["ApprovalBudget"],project["CurrentStatus"])
+                
+                st.write(response)
+                
                 if response["ProjectID"]:
                     st.toast("新增成功",icon="✅")
                 else:
                     st.toast("新增失敗",icon="❌")
+
+                # 更新 project_date_data 的 ProjectID
+                project_date_data["ProjectID"] = project["ProjectID"]
+
+                response = create_project_dates(project["ProjectID"],project_date_data)
+                
+                st.write(response)
+
+                if response["ProjectID"]:
+                    st.toast("新增日期成功",icon="✅")
+                else:
+                    st.toast("新增日期失敗",icon="❌")
+
+            time.sleep(1)
+            st.cache_data.clear()
             st.rerun()
             
 
@@ -93,6 +133,8 @@ def original_view(df):
                 st.toast("刪除成功",icon="✅")
             else:
                 st.toast("刪除失敗",icon="❌")
+        time.sleep(1)
+        st.cache_data.clear()
         st.rerun()
 
     if st.button("新增日期索引"):

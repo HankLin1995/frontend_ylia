@@ -72,3 +72,11 @@ def get_workstations():
 def create_project_dates(project_id,data):
     response = requests.post(f"{BASE_URL}/projects/{project_id}/dates", json=data)
     return response.json()
+
+def get_project_dates(project_id):
+    response = requests.get(f"{BASE_URL}/projects/{project_id}/dates")
+    return response.json()
+
+def update_project_dates(project_id,data):
+    response = requests.put(f"{BASE_URL}/projects/{project_id}/dates", json=data)
+    return response.json()

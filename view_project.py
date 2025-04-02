@@ -1,9 +1,21 @@
 import streamlit as st
 import pandas as pd
 import time
-from api import get_projects, get_project, get_plan, update_project
+from api import get_projects, get_project, get_plan, update_project,create_project_dates,update_project_dates,get_project_dates
 from view_projects import get_projects_df
 from view_workstations import get_workstations_df
+
+DATE_MAP = {
+    "ComplaintDate": "陳情日期",
+    "SubmissionDate": "提報日期",
+    "SurveyDate": "測設日期",
+    "ApprovalDate": "計畫核准日期",
+    "DraftCompletionDate": "初稿完成日期",
+    "BudgetApprovalDate": "預算書核准日期",
+    "TenderDate": "招標日期",
+    "AwardDate": "決標日期",
+    "UpdateTime": "更新時間"
+}
 
 def display_text(plan,project):
 
@@ -50,26 +62,47 @@ def display_table(plan,project):
     # 使用 Pandas DataFrame 來顯示表格
     plan_data = {
         "標題": ["計畫名稱", "計畫編號", "核定金額"],
-        "內容": [plan['PlanName'], plan['PlanID'], project['ApprovalBudget']]
+        "內容": [str(plan['PlanName']), str(plan['PlanID']), str(project['ApprovalBudget'])]
     }
 
     project_data = {
         "標題": ["年度", "狀態", "工程名稱", "工程編號", "工作站"],
-        "內容": [plan['Year'], f"{get_status_emoji(project['CurrentStatus'])} {project['CurrentStatus']}", project['ProjectName'], project['ProjectID'], project['Workstation']]
+        "內容": [str(plan['Year']), str(get_status_emoji(project['CurrentStatus'])+" "+project['CurrentStatus']), str(project['ProjectName']), str(project['ProjectID']), str(project['Workstation'])]
     }
 
     # 使用 pandas DataFrame 格式顯示表格
     df_plan = pd.DataFrame(plan_data)
     df_project = pd.DataFrame(project_data)
 
+
     # 顯示表格
     with st.container():
         st.markdown("#### 🍪計畫資料")
-        # st.table(df_plan)
         st.dataframe(df_plan,hide_index=True)
     with st.container():
         st.markdown("#### 📋工程資料")
         st.dataframe(df_project,hide_index=True)
+
+
+def display_timeline(project_dates):
+
+    from streamlit_timeline import st_timeline
+
+    timeline_items = []
+    cnt = 1
+    for key,value in project_dates.items():
+
+        if value:
+            if key !="ProjectID" and key !="CreateTime" and key !="UpdateTime":
+                timeline_items.append({"id": cnt, "content": DATE_MAP[key]+" - "+value, "start": value})
+                cnt += 1
+
+    st.markdown("#### 🕰️工程日期")
+
+    # with st.container(border=True):
+    st_timeline(timeline_items, groups=[], options={}, height="300px")
+
+
 
 def get_status_emoji(status):
     if status == "核定":
@@ -159,20 +192,21 @@ def update_dates_content(project_id):
 
     with col1:
         submission_date = st.date_input("提報日期" )
-
     with col2:
-        draft_completion_date = st.date_input("初稿完成日期" )
-    
-    with col3:
         budget_approval_date = st.date_input("預算書核准日期")
+    with col3:
+        draft_completion_date = st.date_input("初稿完成日期" )
 
     if st.button("更新日期",key="update_dates"):
+
         data={
-            "SubmissionDate": submission_date,
-            "DraftCompletionDate": draft_completion_date,
-            "BudgetApprovalDate": budget_approval_date
+            "SubmissionDate": submission_date.strftime("%Y-%m-%d"),
+            "DraftCompletionDate": draft_completion_date.strftime("%Y-%m-%d"),
+            "BudgetApprovalDate": budget_approval_date.strftime("%Y-%m-%d")
         }
-        response = create_project_dates(project_id,data)
+
+        response = update_project_dates(project_id,data)
+        # st.write(response)
         if response["ProjectID"]:
             st.toast("更新成功",icon="✅")
         else:
@@ -187,6 +221,7 @@ selected_project_id = get_selected_project()
 if selected_project_id:
     project = get_project(selected_project_id)
     plan = get_plan(project["PlanID"])
+    project_dates = get_project_dates(project["ProjectID"])
 
 st.subheader("📳 工程明細表")
 
@@ -195,6 +230,7 @@ tab1,tab2=st.tabs(["查看資料","內容編輯"])
 with tab1:
 
     display_table(plan,project)
+    display_timeline(project_dates)
 
 with tab2:
     
