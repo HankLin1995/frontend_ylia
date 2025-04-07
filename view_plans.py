@@ -1,23 +1,14 @@
 import streamlit as st
 import pandas as pd
-from api import get_plans,create_plan,update_plan,delete_plan
+from api import (
+   create_plan,
+   update_plan,
+   delete_plan
+)
 import time
+from convert import get_plans_df
 
 st.subheader("📅計畫清單")
-
-def get_plans_df():
-    plans = get_plans()
-
-    df = pd.DataFrame(plans)
-
-
-    # 使用 ISO8601 格式解析時間，並只顯示日期部分
-    df["CreateTime"] = pd.to_datetime(df["CreateTime"], format='ISO8601').dt.strftime('%Y-%m-%d')
-    df.columns = ["計畫編號", "計畫名稱", "年度", "經費來源", "核定文號", "附件", "創建時間"]
-    df=df[["年度","計畫編號", "計畫名稱", "核定文號", "創建時間"]]
-    df=df.sort_values(by="計畫編號",ascending=False)
-
-    return df
 
 @st.dialog("📝新增計畫")
 def add_plan_ui():

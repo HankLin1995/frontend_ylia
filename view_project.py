@@ -1,9 +1,15 @@
 import streamlit as st
 import pandas as pd
 import time
-from api import get_projects, get_project, get_plan, update_project,create_project_dates,update_project_dates,get_project_dates
-from view_projects import get_projects_df
-from view_workstations import get_workstations_df
+from api import (
+    get_project,
+    get_plan,
+    update_project,
+    create_project_dates,
+    update_project_dates,
+    get_project_dates
+)
+from convert import get_projects_df,get_workstations_df,get_plans_df
 
 DATE_MAP = {
     "ComplaintDate": "陳情日期",
@@ -93,6 +99,7 @@ def display_timeline(project_dates):
     for key,value in project_dates.items():
 
         if value:
+            # st.write(f"{DATE_MAP[key]}: {value}")
             if key !="ProjectID" and key !="CreateTime" and key !="UpdateTime":
                 timeline_items.append({"id": cnt, "content": DATE_MAP[key]+" - "+value, "start": value})
                 cnt += 1
@@ -101,8 +108,6 @@ def display_timeline(project_dates):
 
     # with st.container(border=True):
     st_timeline(timeline_items, groups=[], options={}, height="300px")
-
-
 
 def get_status_emoji(status):
     if status == "核定":
@@ -124,10 +129,20 @@ def get_selected_project():
 
     with st.sidebar.container(border=True):
         st.subheader("🔍 工程搜尋")
+
+        plan_list = get_plans_df()["計畫編號"].tolist()
+        plan_list.insert(0, "全部")
+
+        search_plan_id = st.selectbox("計畫編號",plan_list)
+
         search_text = st.text_input("搜尋名稱或編號", placeholder="請輸入關鍵字...")
 
         # 應用篩選條件
         filtered_df = df.copy()
+
+        if search_plan_id != "全部":
+            mask = (filtered_df['計畫編號'] == search_plan_id)
+            filtered_df = filtered_df[mask]
 
         # 搜尋文字篩選
         if search_text:
@@ -172,20 +187,6 @@ def update_workstation_content(exist_workstation):
 
 def update_dates_content(project_id):
 
-# // 工程日期總表 Table
-# Table ProjectDateSummary {
-#   ProjectID string [pk, ref: > Project.ProjectID] // 工程編號(PK)
-#   ComplaintDate timestamp // 陳情日期
-#   SubmissionDate timestamp // 提報日期
-#   SurveyDate timestamp // 測設日期
-#   ApprovalDate timestamp // 計畫核准日期
-#   DraftCompletionDate timestamp // 初稿完成日期
-#   BudgetApprovalDate timestamp // 預算書核准日期
-#   TenderDate timestamp // 招標日期
-#   AwardDate timestamp // 決標日期
-#   UpdateTime timestamp // 更新時間
-# }
-
     st.markdown("#### 🕰️工程日期")
 
     col1,col2,col3=st.columns(3)
@@ -223,14 +224,18 @@ if selected_project_id:
     plan = get_plan(project["PlanID"])
     project_dates = get_project_dates(project["ProjectID"])
 
-st.subheader("📳 工程明細表")
+st.subheader(get_status_emoji(project["CurrentStatus"]) + f"{project['ProjectName']}") 
 
 tab1,tab2=st.tabs(["查看資料","內容編輯"])
 
 with tab1:
 
     display_table(plan,project)
-    display_timeline(project_dates)
+    # st.write(project_dates)
+    if "detail" in project_dates:
+        st.warning("查無相關日程內容",icon="⚠️")
+    else:
+        display_timeline(project_dates)
 
 with tab2:
     

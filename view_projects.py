@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 import time
-from view_plans import get_plans_df
+from convert import get_plans_df,get_projects_df
 from api import (
-    get_projects,
+    # get_projects,
     create_project,
     get_plan,
     delete_project,
@@ -96,12 +96,12 @@ def import_excel():
             st.rerun()
             
 
-@st.cache_data
-def get_projects_df():
-    projects = get_projects()
-    df = pd.DataFrame(projects)
-    df.columns=["工程編號","計畫編號","工程名稱","工作站","核定金額","目前狀態","建立時間"]
-    return df
+# @st.cache_data
+# def get_projects_df():
+#     projects = get_projects()
+#     df = pd.DataFrame(projects)
+#     df.columns=["工程編號","計畫編號","工程名稱","工作站","核定金額","目前狀態","建立時間"]
+#     return df
 
 def group_view(df):
     df_grouped = df.groupby("計畫編號")
