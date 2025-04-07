@@ -155,6 +155,10 @@ def update_workstation_content(exist_workstation):
     if exist_workstation:
         selected_workstation = st.selectbox("選擇",df_workstations["Name"],index=df_workstations["Name"].tolist().index(exist_workstation))
     else:
+        search_workstation = st.text_input("搜尋", placeholder="請輸入關鍵字...")
+        if search_workstation:
+            mask = (df_workstations['Name'].str.contains(search_workstation, na=False))
+            df_workstations = df_workstations[mask]
         selected_workstation = st.selectbox("選擇",df_workstations["Name"])
     
     if st.button("更新工作站",key="update_workstation"):
