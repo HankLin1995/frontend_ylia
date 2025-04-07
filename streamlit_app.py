@@ -9,11 +9,16 @@ plan_detail_page=st.Page("view_plan.py",title="計畫明細",icon=":material/acc
 
 project_page=st.Page("view_projects.py",title="工程清單",icon=":material/account_circle:")
 project_detail_page=st.Page("view_project.py",title="工程明細",icon=":material/account_circle:")
+
+dashboard_page=st.Page("view_dashboard.py",title="工程分析",icon=":material/account_circle:")
+import_page=st.Page("view_import.py",title="EXCEL匯入",icon=":material/account_circle:")
+
 pg=st.navigation(
     {
         "設定":[workstation_page],
         "計畫":[plan_page,plan_detail_page],
         "工程":[project_page,project_detail_page],
+        "分析":[dashboard_page,import_page]
     }
 )
 

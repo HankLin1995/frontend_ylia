@@ -4,6 +4,7 @@ import pandas as pd
 from api import (
     get_plans,
     get_projects,
+    get_project_dates,
     get_workstations
 )
 
@@ -26,6 +27,7 @@ def get_projects_df():
     projects = get_projects()
     df = pd.DataFrame(projects)
     df.columns=["工程編號","計畫編號","工程名稱","工作站","核定金額","目前狀態","建立時間"]
+
     return df
 
 @st.cache_data
@@ -33,6 +35,7 @@ def get_workstations_df():
     workstations = get_workstations()
     df = pd.DataFrame(workstations)
     df=df[["Name","Division"]]
+    df.columns=["工作站","所屬分處"]
     return df
 
 def get_status_emoji(status):

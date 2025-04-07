@@ -108,10 +108,10 @@ def filter_df(df):
             plan_df = plan_df[plan_df["年度"] == search_year]
             plan_list = plan_df["計畫編號"].tolist()
             plan_list.insert(0, "全部")
-            search_plan_id=st.selectbox("計畫編號",plan_list)
+            search_plan_id_list=st.multiselect("計畫編號",plan_list)
 
-        if search_plan_id != "全部":
-            df = df[(df["計畫編號"] == search_plan_id)]
+        if search_plan_id_list:
+            df = df[(df["計畫編號"].isin(search_plan_id_list))]
 
         return df
 
