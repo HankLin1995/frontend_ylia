@@ -34,3 +34,19 @@ def get_workstations_df():
     df = pd.DataFrame(workstations)
     df=df[["Name","Division"]]
     return df
+
+def get_status_emoji(status):
+    if status == "核定":
+        return "🟢"  # 綠色，代表已核定
+    elif status == "提報":
+        return "🔴"  # 紅色，代表正在提報
+    elif status == "初稿":
+        return "🟡"  # 黃色，代表初稿
+    elif status == "預算書":
+        return "🟠"  # 橙色，代表預算書
+    elif status == "招標":
+        return "🔵"  # 藍色，代表招標
+    elif status == "決標":
+        return "🟣"  # 紫色，代表決標
+    else:
+        return "⚪"  # 如果狀態未知，返回白色圓形

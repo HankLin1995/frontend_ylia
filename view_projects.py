@@ -1,15 +1,13 @@
 import streamlit as st
 import pandas as pd
 import time
-from convert import get_plans_df,get_projects_df
+from convert import get_plans_df,get_projects_df,get_status_emoji
 from api import (
-    # get_projects,
     create_project,
     get_plan,
     delete_project,
     create_project_dates
 )
-
 
 @st.dialog("🗂️ 匯入工程明細")
 def import_excel():
@@ -17,6 +15,7 @@ def import_excel():
     plan_id = st.selectbox("計畫編號",get_plans_df()["計畫編號"])
     approval_doc=get_plan(plan_id)["ApprovalDoc"]
     st.write(f"核定文號: {approval_doc}")
+    st.divider()
     current_date=st.date_input("核定日期或提報日期")
 
     if plan_id:
@@ -96,13 +95,27 @@ def import_excel():
             st.rerun()
             
 
-# @st.cache_data
-# def get_projects_df():
-#     projects = get_projects()
-#     df = pd.DataFrame(projects)
-#     df.columns=["工程編號","計畫編號","工程名稱","工作站","核定金額","目前狀態","建立時間"]
-#     return df
+def filter_df(df):
 
+    with st.sidebar.container(border=True):
+        st.subheader("🔍 工程篩選")
+
+        plan_df=get_plans_df()
+
+        search_year=st.selectbox("年度",plan_df["年度"].unique())
+
+        if search_year:
+            plan_df = plan_df[plan_df["年度"] == search_year]
+            plan_list = plan_df["計畫編號"].tolist()
+            plan_list.insert(0, "全部")
+            search_plan_id=st.selectbox("計畫編號",plan_list)
+
+        if search_plan_id != "全部":
+            df = df[(df["計畫編號"] == search_plan_id)]
+
+        return df
+
+# @st.cache_data
 def group_view(df):
     df_grouped = df.groupby("計畫編號")
     for plan_id, group in df_grouped:
@@ -124,40 +137,46 @@ def original_view(df):
     filtered_df = df.iloc[selected_rows]
 
     #delete selected rows
-    if st.button("刪除"):
-        for project in filtered_df.to_dict(orient='records'):
-            project_id=project["工程編號"]
-            response = delete_project(project_id)
-            #message:Project deleted successfully
-            if response["message"] == "Project deleted successfully":
-                st.toast("刪除成功",icon="✅")
-            else:
-                st.toast("刪除失敗",icon="❌")
-        time.sleep(1)
-        st.cache_data.clear()
-        st.rerun()
+    # if st.button("刪除"):
+    #     for project in filtered_df.to_dict(orient='records'):
+    #         project_id=project["工程編號"]
+    #         response = delete_project(project_id)
+    #         #message:Project deleted successfully
+    #         if response["message"] == "Project deleted successfully":
+    #             st.toast("刪除成功",icon="✅")
+    #         else:
+    #             st.toast("刪除失敗",icon="❌")
+    #     time.sleep(1)
+    #     st.cache_data.clear()
+    #     st.rerun()
 
-    if st.button("新增日期索引"):
-        for project in filtered_df.to_dict(orient='records'):
-            project_id=project["工程編號"]
-            response = create_project_dates(project_id,{})
-            if response["ProjectID"]:
-                st.toast("新增成功",icon="✅")
-            else:
-                st.toast("新增失敗",icon="❌")
-        time.sleep(1)
-        st.rerun()
+    # if st.button("新增日期索引"):
+    #     for project in filtered_df.to_dict(orient='records'):
+    #         project_id=project["工程編號"]
+    #         response = create_project_dates(project_id,{})
+    #         if response["ProjectID"]:
+    #             st.toast("新增成功",icon="✅")
+    #         else:
+    #             st.toast("新增失敗",icon="❌")
+    #     time.sleep(1)
+    #     st.rerun()
 
 df = get_projects_df()
 
+df = filter_df(df)
+
+df["目前狀態"] = df["目前狀態"].map(get_status_emoji) + " " + df["目前狀態"]
+
 st.subheader("📅工程清單")
 
-view_type=st.sidebar.radio("查看方式",("計畫群組","原始資料"))
+# view_type=st.sidebar.radio("查看方式",("計畫名稱","原始資料"))
 
-if view_type=="計畫群組":
-    group_view(df)
-else:
-    original_view(df)
+# if view_type=="計畫名稱":
+    # group_view(df)
+# else:
+#    original_view(df)
+
+original_view(df)
 
 if st.sidebar.button("🗂️ 匯入工程明細"):
     import_excel()

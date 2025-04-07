@@ -9,7 +9,7 @@ from api import (
     update_project_dates,
     get_project_dates
 )
-from convert import get_projects_df,get_workstations_df,get_plans_df
+from convert import get_projects_df,get_workstations_df,get_plans_df,get_status_emoji
 
 DATE_MAP = {
     "ComplaintDate": "陳情日期",
@@ -27,16 +27,17 @@ def display_text(plan,project):
 
     with st.container(border=True):
 
-        st.markdown("#### 🍪計畫資料")
+        # st.markdown("##### 🍪計畫")
+        st.write("🍪計畫")
 
         col1,col2,col3 = st.columns(3)
 
         with col1:
-            st.markdown("###### 🔹 計劃名稱")
+            st.markdown("###### 🔹 計畫名稱")
             st.write(f"{plan['PlanName']}")
 
         with col2:
-            st.markdown("###### 🔹 計劃編號")
+            st.markdown("###### 🔹 計畫編號")
             st.write(f"{plan['PlanID']}")
 
         with col3:
@@ -44,7 +45,7 @@ def display_text(plan,project):
             st.write(f"{project['ApprovalBudget']}")
 
     with st.container(border=True):
-        st.markdown("#### 📋工程資料")
+        st.markdown("##### 📋工程")
 
         col1,col2,col3 = st.columns(3)
 
@@ -83,12 +84,11 @@ def display_table(plan,project):
 
     # 顯示表格
     with st.container():
-        st.markdown("#### 🍪計畫資料")
+        st.markdown("##### 🍪計畫")
         st.dataframe(df_plan,hide_index=True)
     with st.container():
-        st.markdown("#### 📋工程資料")
+        st.markdown("##### 📋工程")
         st.dataframe(df_project,hide_index=True)
-
 
 def display_timeline(project_dates):
 
@@ -104,26 +104,10 @@ def display_timeline(project_dates):
                 timeline_items.append({"id": cnt, "content": DATE_MAP[key]+" - "+value, "start": value})
                 cnt += 1
 
-    st.markdown("#### 🕰️工程日期")
+    st.markdown("##### 🕰️工程日期")
 
     # with st.container(border=True):
     st_timeline(timeline_items, groups=[], options={}, height="300px")
-
-def get_status_emoji(status):
-    if status == "核定":
-        return "🟢"  # 綠色，代表已核定
-    elif status == "提報":
-        return "🔴"  # 紅色，代表正在提報
-    elif status == "初稿":
-        return "🟡"  # 黃色，代表初稿
-    elif status == "預算書":
-        return "🟠"  # 橙色，代表預算書
-    elif status == "招標":
-        return "🔵"  # 藍色，代表招標
-    elif status == "決標":
-        return "🟣"  # 紫色，代表決標
-    else:
-        return "⚪"  # 如果狀態未知，返回白色圓形
 
 def get_selected_project():
 
@@ -185,16 +169,31 @@ def update_workstation_content(exist_workstation):
         time.sleep(1)
         st.rerun()
 
-def update_dates_content(project_id):
+def update_dates_content(project_id,project_dates):
 
     st.markdown("#### 🕰️工程日期")
+
+    #let user can choose which date to input
+    date_type = st.multiselect("選擇日期", ["初稿完成日期", "預算書核准日期"],default=["初稿完成日期", "預算書核准日期"])
 
     col1,col2,col3=st.columns(3)
 
     with col1:
         # submission_date = st.date_input("提報日期" )
-        draft_completion_date = st.date_input("初稿完成日期" )
-        budget_approval_date = st.date_input("預算書核准日期")
+        if "初稿完成日期" in date_type:
+            if "DraftCompletionDate" in project_dates and project_dates["DraftCompletionDate"]:
+                draft_completion_date = st.date_input("初稿完成日期(已設定)",value=pd.to_datetime(project_dates["DraftCompletionDate"]).date())
+            else:
+                draft_completion_date = st.date_input("初稿完成日期")
+        else:
+            draft_completion_date = None
+        if "預算書核准日期" in date_type:
+            if "BudgetApprovalDate" in project_dates and project_dates["BudgetApprovalDate"]:
+                budget_approval_date = st.date_input("預算書核准日期(已設定)",value=pd.to_datetime(project_dates["BudgetApprovalDate"]).date())
+            else:
+                budget_approval_date = st.date_input("預算書核准日期")
+        else:
+            budget_approval_date = None
     with col2:
         pass
     with col3:
@@ -202,10 +201,17 @@ def update_dates_content(project_id):
 
     if st.button("更新日期",key="update_dates"): 
 
-        data={
-            "DraftCompletionDate": draft_completion_date.strftime("%Y-%m-%d"),
-            "BudgetApprovalDate": budget_approval_date.strftime("%Y-%m-%d")
-        }
+        data={}
+
+        if "初稿完成日期" in date_type:
+            data["DraftCompletionDate"] = draft_completion_date.strftime("%Y-%m-%d")
+            data_status={"CurrentStatus":"初稿"}
+            update_project(project_id,data_status)
+
+        if "預算書核准日期" in date_type:
+            data["BudgetApprovalDate"] = budget_approval_date.strftime("%Y-%m-%d")
+            data_status={"CurrentStatus":"預算書"}
+            update_project(project_id,data_status)
 
         response = update_project_dates(project_id,data)
         # st.write(response)
@@ -221,6 +227,7 @@ df = get_projects_df()
 selected_project_id = get_selected_project()
 
 if selected_project_id:
+
     project = get_project(selected_project_id)
     plan = get_plan(project["PlanID"])
     project_dates = get_project_dates(project["ProjectID"])
@@ -244,7 +251,7 @@ with tab2:
         update_workstation_content(project["Workstation"])
 
     with st.container(border=True):
-        update_dates_content(project["ProjectID"])
+        update_dates_content(project["ProjectID"],project_dates)
 
     
 
