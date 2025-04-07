@@ -7,6 +7,7 @@ from api import (
     get_workstations
 )
 
+@st.cache_data
 def get_plans_df():
     plans = get_plans()
 
@@ -20,12 +21,14 @@ def get_plans_df():
 
     return df
 
+@st.cache_data
 def get_projects_df():
     projects = get_projects()
     df = pd.DataFrame(projects)
     df.columns=["工程編號","計畫編號","工程名稱","工作站","核定金額","目前狀態","建立時間"]
     return df
 
+@st.cache_data
 def get_workstations_df():
     workstations = get_workstations()
     df = pd.DataFrame(workstations)
