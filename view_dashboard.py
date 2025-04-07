@@ -159,15 +159,15 @@ df_merge = filter_df(df_merge)
 col1,col2,col3,col4 = st.columns(4,border=True)
 
 with col1:
-    st.metric("經費核准日期", count_each_date(df_merge)['經費核准日期'])
+    st.metric("計畫核定", count_each_date(df_merge)['經費核准日期'])
 
 with col2:
-    st.metric("初稿完成日期", count_each_date(df_merge)['初稿完成日期'])
+    st.metric("初稿完成", count_each_date(df_merge)['初稿完成日期'])
 
 with col3:
-    st.metric("預算書完成日期", count_each_date(df_merge)['預算書完成日期'])
+    st.metric("預算書完成", count_each_date(df_merge)['預算書完成日期'])
 
 with col4:
-    st.metric("決標日期", count_each_date(df_merge)['決標日期'])
+    st.metric("決標", count_each_date(df_merge)['決標日期'])
 
 show_division_status(df_merge)
