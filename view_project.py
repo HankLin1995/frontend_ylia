@@ -192,16 +192,17 @@ def update_dates_content(project_id):
     col1,col2,col3=st.columns(3)
 
     with col1:
-        submission_date = st.date_input("提報日期" )
-    with col2:
-        budget_approval_date = st.date_input("預算書核准日期")
-    with col3:
+        # submission_date = st.date_input("提報日期" )
         draft_completion_date = st.date_input("初稿完成日期" )
+        budget_approval_date = st.date_input("預算書核准日期")
+    with col2:
+        pass
+    with col3:
+        pass
 
-    if st.button("更新日期",key="update_dates"):
+    if st.button("更新日期",key="update_dates"): 
 
         data={
-            "SubmissionDate": submission_date.strftime("%Y-%m-%d"),
             "DraftCompletionDate": draft_completion_date.strftime("%Y-%m-%d"),
             "BudgetApprovalDate": budget_approval_date.strftime("%Y-%m-%d")
         }
@@ -224,7 +225,7 @@ if selected_project_id:
     plan = get_plan(project["PlanID"])
     project_dates = get_project_dates(project["ProjectID"])
 
-st.subheader(get_status_emoji(project["CurrentStatus"]) + f"{project['ProjectName']}") 
+st.subheader(get_status_emoji(project["CurrentStatus"]) + f"{project['ProjectName']} ({project['ProjectID']})") 
 
 tab1,tab2=st.tabs(["查看資料","內容編輯"])
 
