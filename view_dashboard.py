@@ -8,26 +8,29 @@ def get_total_df():
     df_plans = get_plans_df()
     df_projects = get_projects_df()
     df_workstations = get_workstations_df()
-    # df_project_date = get_project_dates_df()
+    df_project_dates = get_project_dates_df()
 
     df_merge = pd.merge(df_projects, df_workstations, on='工作站')
     df_merge = pd.merge(df_merge, df_plans, on='計畫編號')
-    # df_merge = pd.merge(df_merge, df_project_dates, on='工程編號')
+    df_merge = pd.merge(df_merge, df_project_dates, on='工程編號')
 
     return df_merge
 
 def filter_df(df_merge):
+
     with st.container(border=True):
+
+        col1,col2,col3 = st.columns([1,1,2])
         #year
-        search_year = st.selectbox("年度", df_merge["年度"].unique())
+        with col1:
+            search_year = st.selectbox("年度", df_merge["年度"].unique())
         #division
-        division_list = df_merge["所屬分處"].unique().tolist()
-        division_list.insert(0, "全部")
-        search_division = st.selectbox("所屬分處", division_list)
-
-        if search_year:
-            df_merge = df_merge[df_merge["年度"] == search_year]
-
+        with col2:
+            division_list = df_merge["所屬分處"].unique().tolist()
+            division_list.insert(0, "全部")
+            search_division = st.selectbox("所屬分處", division_list)
+        #plan id
+        with col3:
             search_plan_id_list = get_plans_df()[get_plans_df()["年度"] == search_year]["計畫編號"].tolist()
             search_plan_id_list = st.multiselect("計畫編號", search_plan_id_list)
 
@@ -38,6 +41,16 @@ def filter_df(df_merge):
             df_merge = df_merge[df_merge["所屬分處"] == search_division]
 
         return df_merge
+
+def count_each_date(df):
+    date_columns = [
+        '經費核准日期', '初稿完成日期', '預算書完成日期', '決標日期'
+    ]
+    date_counts = {}
+    for column in date_columns:
+        if column in df.columns:
+            date_counts[column] = df[column].notna().sum()
+    return date_counts
 
 def show_status_distribution(df):
     st.markdown("##### 📊 工程階段分布")
@@ -57,7 +70,7 @@ def show_status_distribution(df):
     st.plotly_chart(fig, use_container_width=True)
 
 def show_division_status(df):
-    st.markdown("##### 📊 各分處工程階段統計")
+    # st.markdown("##### 📊 各分處工程階段統計")
     
     # 建立交叉分析表
     cross_tab = pd.crosstab(df['所屬分處'], df['目前狀態'])
@@ -73,7 +86,7 @@ def show_division_status(df):
     cross_tab['總計'] = cross_tab.sum(axis=1)
     
     # 顯示表格
-    st.dataframe(cross_tab, use_container_width=True)
+    # st.dataframe(cross_tab, use_container_width=True)
     
     # 準備堆疊圖數據
     df_melt = cross_tab.drop(columns=['總計']).reset_index()
@@ -132,9 +145,6 @@ def show_budget_analysis(df):
     
     st.plotly_chart(fig, use_container_width=True)
 
-df_dates=get_project_dates_df()
-
-st.dataframe(df_dates, hide_index=True, use_container_width=True)
 
 st.subheader("🎯 工程管理儀表板")
 
@@ -143,7 +153,21 @@ df_merge = get_total_df()
 df_merge = filter_df(df_merge)
 
 # 顯示過濾後的數據表
-st.markdown("##### 📋 工程清單")
-st.dataframe(df_merge, hide_index=True, use_container_width=True)
+# st.markdown("##### 📋 工程清單")
+# st.dataframe(df_merge, hide_index=True, use_container_width=True)
+
+col1,col2,col3,col4 = st.columns(4,border=True)
+
+with col1:
+    st.metric("經費核准日期", count_each_date(df_merge)['經費核准日期'])
+
+with col2:
+    st.metric("初稿完成日期", count_each_date(df_merge)['初稿完成日期'])
+
+with col3:
+    st.metric("預算書完成日期", count_each_date(df_merge)['預算書完成日期'])
+
+with col4:
+    st.metric("決標日期", count_each_date(df_merge)['決標日期'])
 
 show_division_status(df_merge)

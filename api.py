@@ -80,3 +80,7 @@ def get_project_dates(project_id):
 def update_project_dates(project_id,data):
     response = requests.put(f"{BASE_URL}/projects/{project_id}/dates", json=data)
     return response.json()
+
+def get_all_project_dates():
+    response = requests.get(f"{BASE_URL}/projects/dates/all")
+    return response.json()

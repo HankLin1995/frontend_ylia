@@ -4,7 +4,7 @@ import pandas as pd
 from api import (
     get_plans,
     get_projects,
-    get_project_dates,
+    get_all_project_dates,
     get_workstations
 )
 
@@ -28,6 +28,13 @@ def get_projects_df():
     df = pd.DataFrame(projects)
     df.columns=["工程編號","計畫編號","工程名稱","工作站","核定金額","目前狀態","建立時間"]
 
+    return df
+
+@st.cache_data
+def get_project_dates_df():
+    project_dates = get_all_project_dates()
+    df = pd.DataFrame(project_dates)
+    df.columns=["工程編號","陳情日期","提報日期","測設日期","經費核准日期","初稿完成日期","預算書完成日期","招標日期","決標日期","更新時間"]
     return df
 
 @st.cache_data
