@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from convert import get_projects_df, get_workstations_df, get_plans_df,get_project_dates_df
+from convert import get_projects_df, get_workstations_df, get_plans_df,get_project_dates_df,get_status_emoji
 
 def get_total_df():
     df_plans = get_plans_df()
@@ -87,7 +87,16 @@ def show_division_status(df):
     
     # 顯示表格
     # st.dataframe(cross_tab, use_container_width=True)
-    
+    # 定義顏色對應
+# 定義顏色對應
+    color_map = {
+        '核定': '#2C6B2F',  # 深綠色 🌲
+        '提報': '#3498DB',  # 藍色 🌊
+        '初稿': '#F1C40F',  # 淡黃色 🌻
+        '預算書': '#E67E22', # 橙色 🍊
+        '招標': '#8E44AD',  # 紫色 🍇
+        '決標': '#BDC3C7'   # 灰色 🌫️
+    }
     # 準備堆疊圖數據
     df_melt = cross_tab.drop(columns=['總計']).reset_index()
     df_melt = pd.melt(df_melt, 
@@ -106,7 +115,9 @@ def show_division_status(df):
                  color='狀態',
                  title='各分處工程階段分布',
                  barmode='stack',
-                 orientation='h')
+                 orientation='h',
+                 color_discrete_map=color_map,
+                 )
     
     # 更新布局
     fig.update_layout(
@@ -146,28 +157,35 @@ def show_budget_analysis(df):
     st.plotly_chart(fig, use_container_width=True)
 
 
+def show_metrics(df_merge):
+    col1,col2,col3,col4 = st.columns(4,border=True)
+
+    with col1:
+        st.metric("計畫核定", count_each_date(df_merge)['經費核准日期'])
+
+    with col2:
+        st.metric("初稿完成", count_each_date(df_merge)['初稿完成日期'])
+
+    with col3:
+        st.metric("預算書完成", count_each_date(df_merge)['預算書完成日期'])
+
+    with col4:
+        st.metric("決標", count_each_date(df_merge)['決標日期'])
+
 st.subheader("🎯 工程管理儀表板")
 
 # 獲取和過濾數據
 df_merge = get_total_df()
 df_merge = filter_df(df_merge)
 
-# 顯示過濾後的數據表
-# st.markdown("##### 📋 工程清單")
-# st.dataframe(df_merge, hide_index=True, use_container_width=True)
-
-col1,col2,col3,col4 = st.columns(4,border=True)
-
-with col1:
-    st.metric("計畫核定", count_each_date(df_merge)['經費核准日期'])
-
-with col2:
-    st.metric("初稿完成", count_each_date(df_merge)['初稿完成日期'])
-
-with col3:
-    st.metric("預算書完成", count_each_date(df_merge)['預算書完成日期'])
-
-with col4:
-    st.metric("決標", count_each_date(df_merge)['決標日期'])
-
+show_metrics(df_merge)
 show_division_status(df_merge)
+
+# 顯示過濾後的數據表
+st.markdown("##### 📋 工程清單")
+
+df_merge["目前狀態"] = df_merge["目前狀態"].map(get_status_emoji) + " " + df_merge["目前狀態"]
+df_merge = df_merge[["工程編號", "工程名稱", "工作站", "核定金額", "目前狀態"]]
+
+st.dataframe(df_merge, hide_index=True, use_container_width=True)
+

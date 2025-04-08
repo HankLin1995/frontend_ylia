@@ -97,12 +97,17 @@ def import_excel():
 
 def filter_df(df):
 
-    with st.sidebar.container(border=True):
-        st.subheader("🔍 工程篩選")
+    # with st.container(border=True):
+    # st.subheader("🔍 工程篩選")
 
-        plan_df=get_plans_df()
+    plan_df=get_plans_df()
 
+    col1,col2 = st.columns([1,2])
+
+    with col1:
         search_year=st.selectbox("年度",plan_df["年度"].unique())
+
+    with col2:
 
         if search_year:
             plan_df = plan_df[plan_df["年度"] == search_year]
@@ -113,7 +118,7 @@ def filter_df(df):
         if search_plan_id_list:
             df = df[(df["計畫編號"].isin(search_plan_id_list))]
 
-        return df
+    return df
 
 # @st.cache_data
 def group_view(df):
@@ -127,6 +132,10 @@ def group_view(df):
 def original_view(df):
     event = st.dataframe(
         df,
+        column_config={
+            "計畫編號": None,
+            "建立時間": None
+        },
         use_container_width=True,
         hide_index=True,
         on_select="rerun",
