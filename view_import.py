@@ -3,6 +3,10 @@ import streamlit as st
 import pandas as pd
 import time
 from api import update_project,update_project_dates
+from convert import get_project_dates_df
+from api import get_all_project_dates
+
+st.write(get_all_project_dates())
 
 # 定義轉換函數
 def convert_roc_to_gregorian(roc_date):
@@ -24,6 +28,7 @@ def convert_roc_to_gregorian(roc_date):
     return f"{gregorian_year}-{month}-{day}"
 
 file = st.file_uploader("選擇Excel檔案", type=["xlsx"])
+
 
 if file is not None:
     df = pd.read_excel(file)

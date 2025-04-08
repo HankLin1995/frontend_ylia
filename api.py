@@ -84,3 +84,33 @@ def update_project_dates(project_id,data):
 def get_all_project_dates():
     response = requests.get(f"{BASE_URL}/projects/dates/all")
     return response.json()
+
+#變更紀錄
+def create_change_record(project_id, data, file=None):
+    if file:
+        files = {"file": file}
+        # 從 data 中移除 PDFPath，因為它是由後端處理的
+        data = {k: v for k, v in data.items() if k != "PDFPath"}
+        response = requests.post(f"{BASE_URL}/projects/{project_id}/changes", data=data, files=files)
+    else:
+        # 從 data 中移除 PDFPath，因為它是由後端處理的
+        data = {k: v for k, v in data.items() if k != "PDFPath"}
+        response = requests.post(f"{BASE_URL}/projects/{project_id}/changes", json=data)
+    return response.json()
+
+def get_project_changes(project_id):
+    response = requests.get(f"{BASE_URL}/projects/{project_id}/changes")
+    return response.json()
+
+def update_change_record(project_id, change_id, data, file=None):
+    files = {"file": file} if file else None
+    response = requests.patch(f"{BASE_URL}/projects/{project_id}/changes/{change_id}", json=data)
+    return response.json()
+
+def delete_change_record(project_id, change_id):
+    response = requests.delete(f"{BASE_URL}/projects/{project_id}/changes/{change_id}")
+    return response.json()
+
+def get_all_changes():
+    response = requests.get(f"{BASE_URL}/projects/changes/all")
+    return response.json()

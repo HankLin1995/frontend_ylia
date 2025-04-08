@@ -34,7 +34,7 @@ def get_projects_df():
 def get_project_dates_df():
     project_dates = get_all_project_dates()
     df = pd.DataFrame(project_dates)
-    df.columns=["工程編號","陳情日期","提報日期","測設日期","經費核准日期","初稿完成日期","預算書完成日期","招標日期","決標日期","更新時間"]
+    df.columns=["工程編號","陳情日期","提報日期","測設日期","經費核准日期","初稿完成日期","預算書完成日期","招標日期","決標日期","撤案日期","更新時間"]
     return df
 
 @st.cache_data
