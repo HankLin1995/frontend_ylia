@@ -16,7 +16,7 @@ def add_plan_ui():
     plan_id=st.text_input("計畫編號")
     plan_name = st.text_input("計畫名稱")
     year=st.text_input("年度")
-    funding_source=st.text_input("經費來源")
+    # funding_source=st.text_input("經費來源")
     approval_doc=st.text_input("核定文號")
     file=st.file_uploader("附件", type=["pdf"])
 
@@ -24,7 +24,7 @@ def add_plan_ui():
         "PlanID": plan_id,
         "PlanName": plan_name,
         "Year": year,
-        "FundingSource": funding_source,
+        "FundingSource": "固定資產建設改良擴充-土地改良物(國庫撥款)",
         "ApprovalDoc": approval_doc,
     }
 
@@ -90,3 +90,7 @@ with col1:
 with col2:
     if st.button("📤上傳附件",use_container_width=True):
         update_plan_ui()
+        
+if st.sidebar.button("🔄重新整理"):
+    st.cache_data.clear()
+    st.rerun()
