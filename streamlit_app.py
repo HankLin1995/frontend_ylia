@@ -2,7 +2,7 @@ import streamlit as st
 
 VERSION="1.0.0"
 
-st.set_page_config(page_title=f"工程管理系統 v{VERSION}",layout="wide")
+st.set_page_config(page_title=f"工程管理系統-V{VERSION}",layout="wide")
 st.logo("LOGO.PNG")
 
 workstation_page=st.Page("view_workstations.py",title="基本設定",icon="⚙️")
@@ -20,8 +20,8 @@ import_page=st.Page("view_import.py",title="EXCEL匯入",icon="📥")
 pg=st.navigation(
     {
         "設定":[workstation_page],
-        "計畫":[plan_page,plan_detail_page],
-        "工程":[project_page,project_detail_page,project_changes_page],
+        "計畫":[plan_page,plan_detail_page,project_changes_page],
+        "工程":[project_page,project_detail_page],
         "分析":[dashboard_page,import_page]
     }
 )
