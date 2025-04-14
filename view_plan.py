@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 import time
 
-from view_plans import get_plans_df
+# from view_plans import get_plans_df
+from convert import get_plans_df
 from api import get_plans,get_plan,create_project
             
 st.subheader("計畫明細")
