@@ -173,6 +173,7 @@ def update_workstation_content(exist_workstation):
         time.sleep(1)
         st.rerun()
 
+@st.fragment
 def update_dates_content(project_id,project_dates):
 
     st.markdown("#### 🕰️工程日期")

@@ -5,7 +5,8 @@ from api import (
     get_plans,
     get_projects,
     get_all_project_dates,
-    get_workstations
+    get_workstations,
+    get_all_changes
 )
 
 @st.cache_data
@@ -43,6 +44,15 @@ def get_workstations_df():
     df = pd.DataFrame(workstations)
     df=df[["Name","Division"]]
     df.columns=["工作站","所屬分處"]
+    return df
+
+@st.cache_data
+def get_changes_df():
+    changes = get_all_changes()
+    if not changes:
+        return pd.DataFrame()
+    df = pd.DataFrame(changes)
+    df.columns=["工程編號","原金額","新金額","變更原因","變更日期","文號","PDFPath","ID","建立時間"]
     return df
 
 def get_status_emoji(status):

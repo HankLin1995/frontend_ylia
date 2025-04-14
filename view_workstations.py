@@ -77,7 +77,7 @@ def display_pills(df):
 
 ##### MAIN UI #####
 
-tab1,tab2=st.tabs(["工作站","其他設定"])
+tab1,tab2=st.tabs(["工作站","其他設定(開發中)"])
 
 with tab1:
     # st.subheader("🎖️ 工作站標籤")
