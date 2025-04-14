@@ -81,8 +81,12 @@ st.dataframe(df,hide_index=True)
 #     # st.subheader(f"{year}年計畫清單")
 #     st.dataframe(group,hide_index=True)
 
-if st.button("📝新增計畫"):
-    add_plan_ui()
+col1, col2 = st.columns(2)
 
-if st.button("📤上傳附件"):
-    update_plan_ui()
+with col1:
+    if st.button("📝新增計畫",use_container_width=True):
+        add_plan_ui()
+
+with col2:
+    if st.button("📤上傳附件",use_container_width=True):
+        update_plan_ui()

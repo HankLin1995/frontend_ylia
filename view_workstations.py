@@ -70,20 +70,31 @@ def display_pills(df):
     
     df_grouped = df.groupby("Division")
     for division, group in df_grouped:
-        label=f"🎯 {division}"
-        st.markdown("---")
+        label=f" 🎯 {division}"
+        # st.markdown("---")
         st.pills(label,group["Name"])
+        st.markdown("---")
 
-st.subheader("🎖️ 工作站標籤")
+##### MAIN UI #####
 
-df_workstations = get_workstations_df()
+tab1,tab2=st.tabs(["工作站","其他設定"])
 
-display_pills(df_workstations)
+with tab1:
+    # st.subheader("🎖️ 工作站標籤")
+    df_workstations = get_workstations_df()
+    display_pills(df_workstations)
+
+    if st.button("新增工作站"):
+        create_workstation_ui()
+
+with tab2:
+    st.warning("開發中請稍後!")
+    # if st.button("新增工作站"):
+        # create_workstation_ui()
+# # if st.sidebar.button("上傳CSV"): 
+# #     upload_csv()
     
-# if st.sidebar.button("上傳CSV"): 
-#     upload_csv()
+# if st.sidebar.button("新增工作站"):
     
-if st.sidebar.button("新增工作站"):
-    
-    create_workstation_ui()
+#     create_workstation_ui()
     
