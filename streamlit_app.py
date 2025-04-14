@@ -17,13 +17,15 @@ project_changes_page=st.Page("view_changes.py",title="修正計畫總表",icon="
 dashboard_page=st.Page("view_dashboard.py",title="工程分析",icon="📊")
 import_page=st.Page("view_import.py",title="EXCEL匯入",icon="📥")
 
+todolist_page=st.Page("view_todolist.py",title="待辦事項",icon="🏐")
+
 pg=st.navigation(
     {
         "設定":[workstation_page],
         "計畫":[plan_page,plan_detail_page,project_changes_page],
         "工程":[project_detail_page],
         "分析":[dashboard_page],
-        "開發用":[import_page]
+        "開發用":[import_page,todolist_page]
     }
 )
 
