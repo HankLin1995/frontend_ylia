@@ -6,7 +6,7 @@ from api import update_project,update_project_dates
 from convert import get_project_dates_df
 from api import get_all_project_dates
 
-st.write(get_all_project_dates())
+# st.write(get_all_project_dates())
 
 # 定義轉換函數
 def convert_roc_to_gregorian(roc_date):

@@ -236,9 +236,7 @@ def format_currency(value):
 
 ##### MAIN UI #####
 
-
-
-st.subheader("💰修正計畫")
+st.subheader("💰修正計畫總表")
 
 df = get_changes_df()
 df_projects = get_projects_df()

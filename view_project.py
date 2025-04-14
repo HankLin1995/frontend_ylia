@@ -7,7 +7,8 @@ from api import (
     update_project,
     create_project_dates,
     update_project_dates,
-    get_project_dates
+    get_project_dates,
+    get_project_changes
 )
 from convert import get_projects_df,get_workstations_df,get_plans_df,get_status_emoji
 
@@ -65,7 +66,7 @@ def display_text(plan,project):
             st.markdown("###### 🔹 工作站")
             st.write(f"{project['Workstation']}")
 
-def display_table(plan,project):
+def display_table(plan,project,project_changes):
     # 使用 Pandas DataFrame 來顯示表格
     plan_data = {
         "標題": ["計畫名稱", "計畫編號", "核定金額"],
@@ -77,6 +78,17 @@ def display_table(plan,project):
         "內容": [str(plan['Year']), str(get_status_emoji(project['CurrentStatus'])+" "+project['CurrentStatus']), str(project['ProjectName']), str(project['ProjectID']), str(project['Workstation'])]
     }
 
+    if project_changes:
+
+        # st.write(project_changes)
+        project_changes_data = {
+            "標題": ["核定日期", "核定文號", "原金額", "新金額"],
+            "內容": [str(project_changes[0]['ChangeDate']), str(project_changes[0]['ChangeDoc']), str(project_changes[0]['OldAmount']), str(project_changes[0]['NewAmount'])]
+        }
+
+        df_project_changes = pd.DataFrame(project_changes_data)
+
+
     # 使用 pandas DataFrame 格式顯示表格
     df_plan = pd.DataFrame(plan_data)
     df_project = pd.DataFrame(project_data)
@@ -86,9 +98,15 @@ def display_table(plan,project):
     with st.container():
         st.markdown("##### 🍪計畫")
         st.dataframe(df_plan,hide_index=True)
+        if project_changes:
+            st.toast("本案具有經費修正紀錄!",icon="⚠️")
+            st.dataframe(df_project_changes,hide_index=True)
+    
     with st.container():
         st.markdown("##### 📋工程")
         st.dataframe(df_project,hide_index=True)
+
+    
 
 def display_timeline(project_dates):
 
@@ -236,14 +254,15 @@ if selected_project_id:
     project = get_project(selected_project_id)
     plan = get_plan(project["PlanID"])
     project_dates = get_project_dates(project["ProjectID"])
+    project_changes = get_project_changes(project["ProjectID"])
 
 st.subheader(get_status_emoji(project["CurrentStatus"]) + f"{project['ProjectName']} ({project['ProjectID']})") 
 
-tab1,tab2=st.tabs(["查看資料","內容編輯"])
+tab1,tab2=st.tabs(["查看資料","內容編輯",])
 
 with tab1:
 
-    display_table(plan,project)
+    display_table(plan,project,project_changes)
     # st.write(project_dates)
     if "detail" in project_dates:
         st.warning("查無相關日程內容",icon="⚠️")

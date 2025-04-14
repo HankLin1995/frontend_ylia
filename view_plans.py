@@ -32,6 +32,7 @@ def add_plan_ui():
         response = create_plan(data,file)
         st.success("新增成功")
         time.sleep(1)
+        st.cache_data.clear()
         st.rerun()
 
 @st.dialog("📤上傳附件")
@@ -55,6 +56,7 @@ def update_plan_ui():
 
         if response["PlanID"]:
             st.toast("更新成功",icon="✅")
+            st.cache_data.clear()
         else:
             st.toast("更新失敗",icon="❌")
 
@@ -68,6 +70,7 @@ def delete_plan_ui():
         response = delete_plan(plan_id)
         st.success("刪除成功")
         time.sleep(1)
+        st.cache_data.clear()
         st.rerun()
 
 df=get_plans_df()
@@ -81,7 +84,7 @@ st.dataframe(df,hide_index=True)
 #     # st.subheader(f"{year}年計畫清單")
 #     st.dataframe(group,hide_index=True)
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     if st.button("📝新增計畫",use_container_width=True):
@@ -90,7 +93,11 @@ with col1:
 with col2:
     if st.button("📤上傳附件",use_container_width=True):
         update_plan_ui()
-        
+
+with col3:
+    if st.button("🗑️ 刪除計畫",use_container_width=True):
+        delete_plan_ui()
+
 if st.sidebar.button("🔄重新整理"):
     st.cache_data.clear()
     st.rerun()
