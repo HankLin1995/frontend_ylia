@@ -104,7 +104,7 @@ def get_project_changes(project_id):
 
 def update_change_record(project_id, change_id, data, file=None):
     files = {"file": file} if file else None
-    response = requests.patch(f"{BASE_URL}/projects/{project_id}/changes/{change_id}", json=data)
+    response = requests.patch(f"{BASE_URL}/projects/{project_id}/changes/{change_id}", data=data)
     return response.json()
 
 def delete_change_record(project_id, change_id):

@@ -84,7 +84,7 @@ with tab1:
     df_workstations = get_workstations_df()
     display_pills(df_workstations)
 
-    if st.button("新增工作站"):
+    if st.sidebar.button("新增工作站"):
         create_workstation_ui()
 
 with tab2:

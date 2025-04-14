@@ -1,18 +1,21 @@
 import streamlit as st
 
-st.set_page_config(page_title="工程管理系統",layout="wide")
+VERSION="1.0.0"
 
-workstation_page=st.Page("view_workstations.py",title="基本設定",icon=":material/account_circle:")
+st.set_page_config(page_title=f"工程管理系統 v{VERSION}",layout="wide")
+st.logo("LOGO.PNG")
 
-plan_page=st.Page("view_plans.py",title="計畫清單",icon=":material/account_circle:")
-plan_detail_page=st.Page("view_plan.py",title="計畫明細(開發中)",icon=":material/account_circle:")
+workstation_page=st.Page("view_workstations.py",title="基本設定",icon="⚙️")
 
-project_page=st.Page("view_projects.py",title="工程清單",icon=":material/account_circle:")
-project_detail_page=st.Page("view_project.py",title="工程明細",icon=":material/account_circle:")
-project_changes_page=st.Page("view_changes.py",title="經費異動(開發中)",icon=":material/account_circle:")
+plan_page=st.Page("view_plans.py",title="計畫清單",icon="📋")
+plan_detail_page=st.Page("view_plan.py",title="計畫明細(開發中)",icon="📝")
 
-dashboard_page=st.Page("view_dashboard.py",title="工程分析",icon=":material/account_circle:")
-import_page=st.Page("view_import.py",title="EXCEL匯入",icon=":material/account_circle:")
+project_page=st.Page("view_projects.py",title="工程清單",icon="📁")
+project_detail_page=st.Page("view_project.py",title="工程明細",icon="📂")
+project_changes_page=st.Page("view_changes.py",title="修正計畫",icon="✏️")
+
+dashboard_page=st.Page("view_dashboard.py",title="工程分析",icon="📊")
+import_page=st.Page("view_import.py",title="EXCEL匯入",icon="📥")
 
 pg=st.navigation(
     {
@@ -24,4 +27,3 @@ pg=st.navigation(
 )
 
 pg.run()
-    

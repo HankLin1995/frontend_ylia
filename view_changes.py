@@ -12,6 +12,12 @@ from api import (
 
 from convert import get_projects_df,get_changes_df
 
+if not st.session_state.get("change_date"):
+    st.session_state.change_date = datetime.now()
+
+if not st.session_state.get("change_doc"):
+    st.session_state.change_doc = ""
+
 def add_change_records():
     
     #核定日期
@@ -55,6 +61,7 @@ def add_change_records():
     )
 
     if st.button("新增"):
+
         for index, row in edited_df.iterrows():
             project_id = row["工程編號"]
             old_amount = row["原金額"]
@@ -92,6 +99,7 @@ def show_change_records():
         project_changes = pd.merge(project_changes, projects, on='工程編號')
         st.dataframe(project_changes,hide_index=True)
 
+
 @st.dialog("📝新增變更紀錄")
 
 def add_change_record_ui():
@@ -109,16 +117,15 @@ def add_change_record_ui():
     # st.write(project["ProjectName"])
     old_amount = st.number_input("原金額", min_value=0,value=project["ApprovalBudget"],key=f"old_amount_{project_id}")
     new_amount = st.number_input("新金額", min_value=0,value=0,key=f"new_amount_{project_id}")
-    change_reason = st.text_input("異動原因",key=f"change_reason_{project_id}")
+    # change_reason = st.text_input("異動原因",key=f"change_reason_{project_id}")
 
     change_date = st.date_input("異動日期", value=st.session_state.change_date)
     change_doc = st.text_input("異動文號", value=st.session_state.change_doc)
-    
+
     file = st.file_uploader("附件", type=["pdf"], key="file_uploader")
 
-
     if st.button("新增"):
-        if not all([project_id, old_amount, new_amount, change_reason, change_date, change_doc]):
+        if not all([project_id, old_amount, change_date, change_doc]):
             st.error("請填寫所有必填欄位")
             return
 
@@ -126,7 +133,7 @@ def add_change_record_ui():
             "ProjectID": project_id,
             "OldAmount": int(old_amount),  # 確保是整數
             "NewAmount": int(new_amount),  # 確保是整數
-            "ChangeReason": change_reason,
+            "ChangeReason": "如附件", 
             "ChangeDate": change_date.strftime("%Y-%m-%d"),
             "ChangeDoc": change_doc
         }
@@ -135,6 +142,9 @@ def add_change_record_ui():
             response = create_change_record(project_id, data, file)
             if response and "ID" in response:  # 檢查是否成功創建並返回了記錄 ID
                 st.toast("新增成功", icon="✅")
+                st.session_state.change_date = change_date
+                st.session_state.change_doc = change_doc
+                st.cache_data.clear()
                 time.sleep(1)
                 st.rerun()
             else:
@@ -145,8 +155,8 @@ def add_change_record_ui():
 @st.dialog("✏️編輯變更紀錄")
 def update_change_record_ui():
     # 獲取專案列表
-    projects = get_projects()
-    project_ids = [p["ProjectID"] for p in projects]
+    projects = get_changes_df()
+    project_ids = projects["工程編號"].tolist()
     
     project_id = st.selectbox("專案編號", project_ids)
     
@@ -164,7 +174,7 @@ def update_change_record_ui():
     
     old_amount = st.number_input("原金額", value=change_record["OldAmount"])
     new_amount = st.number_input("新金額", value=change_record["NewAmount"])
-    change_reason = st.text_area("變更原因", value=change_record["ChangeReason"])
+    change_reason = st.text_input("變更原因", value=change_record["ChangeReason"])
     change_date = st.date_input("變更日期", datetime.strptime(change_record["ChangeDate"], "%Y-%m-%d"))
     change_doc = st.text_input("變更文號", value=change_record["ChangeDoc"])
     file = st.file_uploader("附件", type=["pdf"])
@@ -182,6 +192,9 @@ def update_change_record_ui():
         response = update_change_record(project_id, change_record["ID"], data)
         if response:
             st.toast("更新成功", icon="✅")
+            st.cache_data.clear()
+            time.sleep(1)
+            # st.rerun()
         else:
             st.toast("更新失敗", icon="❌")
         time.sleep(1)
@@ -190,8 +203,10 @@ def update_change_record_ui():
 @st.dialog("🗑️刪除變更紀錄")
 def delete_change_record_ui():
     # 獲取專案列表
-    project = get_my_project()
-    project_id = project["ProjectID"]
+    df = get_changes_df()
+    project_ids = df["工程編號"].tolist()
+    
+    project_id = st.selectbox("專案編號", project_ids)
     
     # 獲取該專案的變更紀錄
     changes = get_project_changes(project_id)
@@ -214,38 +229,54 @@ def delete_change_record_ui():
         time.sleep(1)
         st.rerun()
 
-
+def format_currency(value):
+    if pd.isna(value):
+        return "NT$ 0"
+    return f"NT$ {value:,.0f}"
 
 ##### MAIN UI #####
 
+
+
 st.subheader("💰修正計畫")
 
-# tab1,tab2 = st.tabs(["修正計畫清單","修正計畫新增"])
-
-# with tab1:
-    # show_change_records()
-
-# with tab2:
-    # add_change_records()
-
 df = get_changes_df()
+df_projects = get_projects_df()
+df = pd.merge(df, df_projects, on='工程編號')
 
-# df.columns=["工程編號","原金額","新金額","變更原因","變更日期","文號","PDFPath","ID","建立時間"]
+# st.dataframe(df,hide_index=True)
+
+st.dataframe(
+    df[[
+        '工程編號', '工程名稱', '原金額', '新金額', '變更原因', '變更日期', '文號'
+    ]].style.format({
+        '原金額': format_currency,
+        '新金額': format_currency,
+        '變更日期': lambda x: pd.to_datetime(x).strftime('%Y-%m-%d')
+    }),
+    use_container_width=True,
+    hide_index=True
+)
 
 
-if df.empty:
-    st.warning("目前沒有變更紀錄")
-else:
-    st.dataframe(projects,hide_index=True)
-    st.dataframe(df,
-    hide_index=True,
-    column_config={
-        "PDFPath": None,
-        "ID": None,
-        "建立時間": None  
-    })
+# df = df[["工程編號","工程名稱","原金額","新金額","變更原因","變更日期","文號"]]
 
-col1, col2 = st.columns(2)
+# if df.empty:
+#     st.warning("目前沒有變更紀錄")
+# else:
+#     st.dataframe(df,
+#     hide_index=True,
+#     column_config={
+#         "變更原因":None,
+#         "PDFPath": None,
+#         "ID": None,
+#         "建立時間": None  
+#     }).style.format({
+#         "原金額": format_currency,
+#         "新金額": format_currency
+#     })
+
+col1, col2, col3 = st.columns(3)
 
 with col1:
     if st.button("📝新增變更紀錄",use_container_width=True):
@@ -255,13 +286,6 @@ with col2:
     if st.button("✏️編輯變更紀錄",use_container_width=True):
         update_change_record_ui()
 
-# with col3:
-#     if st.button("🗑️刪除變更紀錄",use_container_width=True):
-#         delete_change_record_ui()
-
-
-
-
-# st.write("---")
-# st.write("輸入結果：")
-# st.dataframe(edited_df)
+with col3:
+    if st.button("🗑️刪除變更紀錄",use_container_width=True):
+        delete_change_record_ui()
