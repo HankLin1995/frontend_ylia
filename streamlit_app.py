@@ -1,6 +1,6 @@
 import streamlit as st
 
-VERSION="1.2.1"
+VERSION="1.2.2"
 
 st.set_page_config(page_title=f"工程管理系統-V{VERSION}",layout="wide")
 st.logo("LOGO.PNG")
@@ -14,7 +14,7 @@ plan_detail_page=st.Page("view_plan.py",title="計畫明細",icon="📝")
 project_detail_page=st.Page("view_project.py",title="工程內容",icon="🎆")
 project_changes_page=st.Page("view_changes.py",title="修正預算總表",icon="✏️")
 
-dashboard_page=st.Page("view_dashboard.py",title="工程分析",icon="📊")
+dashboard_page=st.Page("view_dashboard.py",title="工程分析",icon="📊",default=True)
 import_page=st.Page("view_import.py",title="EXCEL匯入",icon="📥")
 
 todolist_page=st.Page("view_todolist.py",title="待辦事項",icon="🏐")

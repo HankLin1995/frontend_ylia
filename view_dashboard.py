@@ -34,7 +34,7 @@ def filter_df(df_merge):
         #plan id
         with col3:
             search_plan_id_list = get_plans_df()[get_plans_df()["年度"] == search_year]["計畫編號"].tolist()
-            search_plan_id_list = st.multiselect("計畫編號", search_plan_id_list)
+            search_plan_id_list = st.multiselect("計畫編號", search_plan_id_list,default=search_plan_id_list[0])
 
             if search_plan_id_list:
                 df_merge = df_merge[df_merge["計畫編號"].isin(search_plan_id_list)]
@@ -127,8 +127,8 @@ def show_division_status(df):
         yaxis={'categoryorder': 'total ascending',
                'ticktext': labels,
                'tickvals': cross_tab.index},
-        xaxis_title="工程數量",
-        yaxis_title="分處",
+        # xaxis_title="工程數量",
+        # yaxis_title="分處",
         showlegend=True,
         height=400
     )
@@ -172,16 +172,21 @@ def show_approved_amount_pie(df):
         amount_by_division,
         values='核定金額',
         names='所屬分處',
-        # title='各分處核定金額佔比',
+        title='各分處核定金額佔比',
         hole=0.3,  # 設置成環圈圖
     )
     
     # 更新布局
     fig.update_layout(
-        showlegend=True,
+        showlegend=False,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
     
+    fig.update_traces(
+        textinfo='label+percent',
+        hovertemplate='<b>%{label}</b><br>核定金額：%{value:,.0f} 元<br>佔比：%{percent}'
+    )
+
     # 顯示圖表
     st.plotly_chart(fig, use_container_width=True)
 
@@ -211,7 +216,7 @@ st.subheader("🎯 工程管理儀表板")
 
 # 獲取和過濾數據
 df_merge = get_total_df()
-df_filtered = filter_df(df_merge)
+df_filtered = filter_df(df_merge).copy()
 
 # 顯示各個分析圖表
 show_metrics(df_filtered)
