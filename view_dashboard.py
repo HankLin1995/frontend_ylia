@@ -136,29 +136,54 @@ def show_division_status(df):
     st.plotly_chart(fig, use_container_width=True)
 
 def show_budget_analysis(df):
-    st.markdown("##### 💰 預算分析")
+    with st.container(border=True):
+        st.subheader("💰 預算分析")
+        
+        # 計算各分處的總預算
+        budget_by_division = df.groupby('所屬分處')['核定金額'].sum().sort_values(ascending=True)
+        
+        # 創建水平條形圖
+        fig = px.bar(budget_by_division,
+                    orientation='h',
+                    title='各分處核定預算總額')
+        
+        # 更新布局
+        fig.update_traces(
+            texttemplate='%{x:,.0f}',  # 顯示預算數值
+            textposition='outside'
+        )
+        fig.update_layout(
+            xaxis_title="核定預算 (元)",
+            yaxis_title="分處",
+            height=400
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+
+def show_approved_amount_pie(df):
+# with st.container(border=True):
+    # st.subheader("💰 核定金額分析")
     
-    # 計算各分處的總預算
-    budget_by_division = df.groupby('所屬分處')['核定金額'].sum().sort_values(ascending=True)
+    # 計算每個分處的核定金額總和
+    amount_by_division = df.groupby('所屬分處')['核定金額'].sum().reset_index()
     
-    # 創建水平條形圖
-    fig = px.bar(budget_by_division,
-                 orientation='h',
-                 title='各分處核定預算總額')
+    # 創建圓餅圖
+    fig = px.pie(
+        amount_by_division,
+        values='核定金額',
+        names='所屬分處',
+        # title='各分處核定金額佔比',
+        hole=0.3,  # 設置成環圈圖
+    )
     
     # 更新布局
-    fig.update_traces(
-        texttemplate='%{x:,.0f}',  # 顯示預算數值
-        textposition='outside'
-    )
     fig.update_layout(
-        xaxis_title="核定預算 (元)",
-        yaxis_title="分處",
-        height=400
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
     
+    # 顯示圖表
     st.plotly_chart(fig, use_container_width=True)
-
 
 def show_metrics(df_merge):
     col1,col2,col3,col4 = st.columns(4,border=True)
@@ -186,16 +211,23 @@ st.subheader("🎯 工程管理儀表板")
 
 # 獲取和過濾數據
 df_merge = get_total_df()
-df_merge = filter_df(df_merge)
+df_filtered = filter_df(df_merge)
 
-show_metrics(df_merge)
-show_division_status(df_merge)
+# 顯示各個分析圖表
+show_metrics(df_filtered)
+
+col1,col2=st.columns([3,1],border=True)
+
+with col1:
+    show_division_status(df_filtered)
+
+with col2:
+    show_approved_amount_pie(df_filtered)
 
 # 顯示過濾後的數據表
 st.markdown("##### 📋 工程清單")
 
-df_merge["目前狀態"] = df_merge["目前狀態"].map(get_status_emoji) + " " + df_merge["目前狀態"]
-df_merge = df_merge[["工程編號", "工程名稱", "工作站", "核定金額", "目前狀態"]]
+df_filtered["目前狀態"] = df_filtered["目前狀態"].map(get_status_emoji) + " " + df_filtered["目前狀態"]
+df_filtered = df_filtered[["工程編號", "工程名稱", "工作站", "核定金額", "目前狀態"]]
 
-st.dataframe(df_merge, hide_index=True, use_container_width=True)
-
+st.dataframe(df_filtered, hide_index=True, use_container_width=True)
