@@ -95,7 +95,7 @@ with col2:
         update_plan_ui()
 
 with col3:
-    if st.button("🗑️ 刪除計畫",use_container_width=True):
+    if st.button("🗑️ 刪除計畫",use_container_width=True,disabled=True):
         delete_plan_ui()
 
 if st.sidebar.button("🔄重新整理"):
