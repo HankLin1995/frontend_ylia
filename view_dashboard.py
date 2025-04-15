@@ -14,6 +14,8 @@ def get_total_df():
     df_merge = pd.merge(df_merge, df_plans, on='計畫編號')
     df_merge = pd.merge(df_merge, df_project_dates, on='工程編號')
 
+    # st.write(df_merge)
+
     return df_merge
 
 def filter_df(df_merge):
@@ -44,7 +46,7 @@ def filter_df(df_merge):
 
 def count_each_date(df):
     date_columns = [
-        '經費核准日期', '初稿完成日期', '預算書完成日期', '決標日期'
+        '經費核准日期', '初稿完成日期', '預算書完成日期', '決標日期', '撤案日期'
     ]
     date_counts = {}
     for column in date_columns:
@@ -76,7 +78,7 @@ def show_division_status(df):
     cross_tab = pd.crosstab(df['所屬分處'], df['目前狀態'])
     
     # 確保所有狀態欄位都存在
-    status_columns = ['提報', '核定', '初稿', '預算書', '招標', '決標']
+    status_columns = ['提報', '核定', '初稿', '預算書', '招標', '決標','撤案']
     for col in status_columns:
         if col not in cross_tab.columns:
             cross_tab[col] = 0
@@ -95,7 +97,8 @@ def show_division_status(df):
         '初稿': '#F1C40F',  # 淡黃色 
         '預算書': '#E67E22', # 橙色 
         '招標': '#8E44AD',  # 紫色 
-        '決標': '#A0522D'   # 
+        '決標': '#A0522D',   # 
+        '撤案': '#000000'   # 灰色
     }
     # 準備堆疊圖數據
     df_melt = cross_tab.drop(columns=['總計']).reset_index()
@@ -161,7 +164,14 @@ def show_metrics(df_merge):
     col1,col2,col3,col4 = st.columns(4,border=True)
 
     with col1:
-        st.metric("計畫核定", count_each_date(df_merge)['經費核准日期'])
+        approval_cnt = count_each_date(df_merge)['經費核准日期']
+        withdraw_cnt = count_each_date(df_merge)['撤案日期']
+        metric_txt = approval_cnt - withdraw_cnt
+
+        if withdraw_cnt > 0:
+            st.metric("計畫核定", value=metric_txt, delta=f"-{withdraw_cnt}")
+        else:
+            st.metric("計畫核定", value=metric_txt)
 
     with col2:
         st.metric("初稿完成", count_each_date(df_merge)['初稿完成日期'])

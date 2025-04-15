@@ -114,3 +114,47 @@ def delete_change_record(project_id, change_id):
 def get_all_changes():
     response = requests.get(f"{BASE_URL}/projects/changes/all")
     return response.json()
+
+def update_project_date_and_status(project_id, new_status, new_date):
+    project_dates = get_project_dates(project_id)
+    # st.write(project_dates)
+    if "detail" in project_dates:
+        # st.warning("查無相關日程內容", icon="⚠️")
+        return
+    else:
+        # st.write(project_dates)
+        # 根據狀態來選擇對應的日期欄位
+        date_column = None
+        
+        if new_status == "撤案":
+            date_column = "WithdrawDate"  # 或你可以選擇 WithdrawDate
+        elif new_status == "計畫核准":
+            date_column = "ApprovalDate"
+        elif new_status == "初稿完成":
+            date_column = "DraftCompletionDate"
+        elif new_status == "預算書核准":
+            date_column = "BudgetApprovalDate"
+        elif new_status == "招標":
+            date_column = "TenderDate"
+        elif new_status == "決標":
+            date_column = "AwardDate"
+        else:
+            st.warning("未知狀態，無法更新日期", icon="⚠️")
+            return
+
+        # 更新選擇的日期欄位
+        if date_column:
+            # 準備更新資料
+            data = {
+                "ProjectID": project_id,
+                date_column: new_date,
+            }
+
+            result = update_project_dates(project_id, data)
+            # st.write(result)
+            print(result)
+
+            # 更新狀態
+            result2 = update_project(project_id, {"CurrentStatus": new_status})
+            # st.write(result2)
+            print(result2)

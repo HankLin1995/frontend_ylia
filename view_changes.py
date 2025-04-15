@@ -6,6 +6,7 @@ from api import (
     create_change_record,
     update_change_record,
     delete_change_record,
+    update_project_date_and_status,
     get_project_changes,
     get_project,
 )
@@ -101,7 +102,6 @@ def show_change_records():
 
 
 @st.dialog("📝新增變更紀錄")
-
 def add_change_record_ui():
 
     projects_df=get_projects_df()
@@ -112,9 +112,8 @@ def add_change_record_ui():
         return
 
     project_id = projects_df[projects_df["工程名稱"] == project_name]["工程編號"].values[0]
-    
     project=get_project(project_id)
-    # st.write(project["ProjectName"])
+
     old_amount = st.number_input("原金額", min_value=0,value=project["ApprovalBudget"],key=f"old_amount_{project_id}")
     new_amount = st.number_input("新金額", min_value=0,value=0,key=f"new_amount_{project_id}")
     # change_reason = st.text_input("異動原因",key=f"change_reason_{project_id}")
@@ -144,6 +143,8 @@ def add_change_record_ui():
                 st.toast("新增成功", icon="✅")
                 st.session_state.change_date = change_date
                 st.session_state.change_doc = change_doc
+                if new_amount == 0:
+                    update_project_date_and_status(project_id, "撤案", change_date)
                 st.cache_data.clear()
                 time.sleep(1)
                 st.rerun()
@@ -192,6 +193,8 @@ def update_change_record_ui():
         response = update_change_record(project_id, change_record["ID"], data)
         if response:
             st.toast("更新成功", icon="✅")
+            if new_amount == 0:
+                update_project_date_and_status(project_id, "撤案", change_date)
             st.cache_data.clear()
             time.sleep(1)
             # st.rerun()
@@ -256,24 +259,6 @@ st.dataframe(
     hide_index=True
 )
 
-
-# df = df[["工程編號","工程名稱","原金額","新金額","變更原因","變更日期","文號"]]
-
-# if df.empty:
-#     st.warning("目前沒有變更紀錄")
-# else:
-#     st.dataframe(df,
-#     hide_index=True,
-#     column_config={
-#         "變更原因":None,
-#         "PDFPath": None,
-#         "ID": None,
-#         "建立時間": None  
-#     }).style.format({
-#         "原金額": format_currency,
-#         "新金額": format_currency
-#     })
-
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -285,5 +270,6 @@ with col2:
         update_change_record_ui()
 
 with col3:
-    if st.button("🗑️刪除變更紀錄",use_container_width=True):
-        delete_change_record_ui()
+    if st.button("🗑️刪除變更紀錄",use_container_width=True,disabled=True):
+        pass
+        # delete_change_record_ui()
