@@ -80,10 +80,14 @@ def display_table(plan,project,project_changes):
 
     if project_changes:
 
-        # st.write(project_changes)
         project_changes_data = {
             "標題": ["核定日期", "核定文號", "原金額", "新金額"],
-            "內容": [str(project_changes[0]['ChangeDate']), str(project_changes[0]['ChangeDoc']), str(project_changes[0]['OldAmount']), str(project_changes[0]['NewAmount'])]
+            "內容": [
+                str(project_changes[0]['ChangeDate']),
+                str(project_changes[0]['ChangeDoc']),
+                str(project_changes[0]['OldAmount']),
+                f"✴️ {project_changes[0]['NewAmount']}"
+            ]
         }
 
         df_project_changes = pd.DataFrame(project_changes_data)
