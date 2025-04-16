@@ -120,7 +120,7 @@ def update_project_date_and_status(project_id, new_status, new_date):
     # st.write(project_dates)
     if "detail" in project_dates:
         # st.warning("查無相關日程內容", icon="⚠️")
-        return
+        return "查無相關日程內容"
     else:
         # st.write(project_dates)
         # 根據狀態來選擇對應的日期欄位
@@ -140,7 +140,7 @@ def update_project_date_and_status(project_id, new_status, new_date):
             date_column = "AwardDate"
         else:
             st.warning("未知狀態，無法更新日期", icon="⚠️")
-            return
+            return "未知狀態，無法更新日期"
 
         # 更新選擇的日期欄位
         if date_column:
@@ -154,7 +154,11 @@ def update_project_date_and_status(project_id, new_status, new_date):
             # st.write(result)
             print(result)
 
+            data2={
+                "CurrentStatus": new_status
+            }
+
             # 更新狀態
-            result2 = update_project(project_id, {"CurrentStatus": new_status})
+            result2 = update_project(project_id, data2)
             # st.write(result2)
             print(result2)

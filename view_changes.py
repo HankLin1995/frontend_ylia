@@ -144,7 +144,7 @@ def add_change_record_ui():
                 st.session_state.change_date = change_date
                 st.session_state.change_doc = change_doc
                 if new_amount == 0:
-                    update_project_date_and_status(project_id, "撤案", change_date)
+                    update_project_date_and_status(project_id, "撤案", change_date.strftime("%Y-%m-%d"))
                 st.cache_data.clear()
                 time.sleep(1)
                 st.rerun()
@@ -225,9 +225,10 @@ def delete_change_record_ui():
 
     if st.button("刪除"):
         response = delete_change_record(project_id, change_record["ID"])
-        if response is None:  # API 返回空表示成功
+        if "detail" in response:  # API 返回空表示成功
             st.toast("刪除成功", icon="✅")
         else:
+            # st.write(response)
             st.toast("刪除失敗", icon="❌")
         time.sleep(1)
         st.rerun()
@@ -270,6 +271,5 @@ with col2:
         update_change_record_ui()
 
 with col3:
-    if st.button("🗑️刪除變更紀錄",use_container_width=True,disabled=True):
-        pass
-        # delete_change_record_ui()
+    if st.button("🗑️刪除變更紀錄",use_container_width=True):
+        delete_change_record_ui()

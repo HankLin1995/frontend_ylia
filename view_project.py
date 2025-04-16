@@ -21,6 +21,7 @@ DATE_MAP = {
     "BudgetApprovalDate": "預算書核准日期",
     "TenderDate": "招標日期",
     "AwardDate": "決標日期",
+    "WithdrawDate":"撤案日期",
     "UpdateTime": "更新時間"
 }
 
@@ -168,6 +169,7 @@ def get_selected_project():
         else:
             return None
 
+@st.fragment
 def update_workstation_content(exist_workstation):
 
     st.markdown("#### 📋工作站")
@@ -201,7 +203,7 @@ def update_dates_content(project_id,project_dates):
     st.markdown("#### 🕰️工程日期")
 
     #let user can choose which date to input
-    date_type = st.multiselect("選擇日期", ["初稿完成日期", "預算書核准日期"],default=["初稿完成日期", "預算書核准日期"])
+    date_type = st.multiselect("選擇日期", ["初稿完成日期", "預算書核准日期","決標日期"],default=["初稿完成日期", "預算書核准日期"])
 
     col1,col2,col3=st.columns(3)
 
@@ -221,6 +223,13 @@ def update_dates_content(project_id,project_dates):
                 budget_approval_date = st.date_input("預算書核准日期")
         else:
             budget_approval_date = None
+        if "決標日期" in date_type:
+            if "AwardDate" in project_dates and project_dates["AwardDate"]:
+                award_date = st.date_input("決標日期(已設定)",value=pd.to_datetime(project_dates["AwardDate"]).date())
+            else:
+                award_date = st.date_input("決標日期")
+        else:
+            award_date = None
     with col2:
         pass
     with col3:
@@ -240,8 +249,30 @@ def update_dates_content(project_id,project_dates):
             data_status={"CurrentStatus":"預算書"}
             update_project(project_id,data_status)
 
+        if "決標日期" in date_type:
+            data["AwardDate"] = award_date.strftime("%Y-%m-%d")
+            data_status={"CurrentStatus":"決標"}
+            update_project(project_id,data_status)
         response = update_project_dates(project_id,data)
         # st.write(response)
+        if response["ProjectID"]:
+            st.toast("更新成功",icon="✅")
+        else:
+            st.toast("更新失敗",icon="❌")
+        time.sleep(1)
+        st.rerun()
+
+
+def update_approval_content(project_id):
+    st.markdown("#### 📋核定金額")
+    
+    approval_budget = st.number_input("核定金額", value=0, step=1)
+    
+    if st.button("更新核定金額",key="update_approval"):
+        data={
+            "ApprovalBudget": approval_budget
+        }
+        response = update_project(project_id,data)
         if response["ProjectID"]:
             st.toast("更新成功",icon="✅")
         else:
@@ -281,7 +312,10 @@ with tab2:
     with st.container(border=True):
         update_dates_content(project["ProjectID"],project_dates)
 
-    
+    with st.container(border=True):
+        update_approval_content(project["ProjectID"])
+
+
 
     
 
