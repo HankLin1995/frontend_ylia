@@ -8,7 +8,8 @@ from api import (
     create_project_dates,
     update_project_dates,
     get_project_dates,
-    get_project_changes
+    get_project_changes,
+    get_project_channels,
 )
 from convert import get_projects_df,get_workstations_df,get_plans_df,get_status_emoji
 
@@ -93,11 +94,10 @@ def display_table(plan,project,project_changes):
 
         df_project_changes = pd.DataFrame(project_changes_data)
 
-
     # 使用 pandas DataFrame 格式顯示表格
     df_plan = pd.DataFrame(plan_data)
     df_project = pd.DataFrame(project_data)
-
+    # df_project_channels = pd.DataFrame(project_channels_data)
 
     # 顯示表格
     with st.container():
@@ -111,7 +111,6 @@ def display_table(plan,project,project_changes):
         st.markdown("##### 📋工程")
         st.dataframe(df_project,hide_index=True)
 
-    
 
 def display_timeline(project_dates):
 
@@ -290,6 +289,7 @@ if selected_project_id:
     plan = get_plan(project["PlanID"])
     project_dates = get_project_dates(project["ProjectID"])
     project_changes = get_project_changes(project["ProjectID"])
+    project_channels = get_project_channels(project["ProjectID"])
 
 st.subheader(get_status_emoji(project["CurrentStatus"]) + f"{project['ProjectName']} ({project['ProjectID']})") 
 
@@ -298,6 +298,21 @@ tab1,tab2=st.tabs(["查看資料","內容編輯",])
 with tab1:
 
     display_table(plan,project,project_changes)
+
+
+    with st.container():
+        st.markdown("##### 🌊水路")
+
+        channels_df = pd.DataFrame(project_channels)
+
+        for _,row in channels_df.iterrows():
+            #emoji
+            st.badge(f"{row['Name']}",color="green")
+
+        # st.pills("",channels_df['Name'].tolist())
+        
+        # st.dataframe(channels_df["ID","Name"],hide_index=True)
+
     # st.write(project_dates)
     if "detail" in project_dates:
         st.warning("查無相關日程內容",icon="⚠️")
@@ -312,8 +327,8 @@ with tab2:
     with st.container(border=True):
         update_dates_content(project["ProjectID"],project_dates)
 
-    with st.container(border=True):
-        update_approval_content(project["ProjectID"])
+    # with st.container(border=True):
+    #     update_approval_content(project["ProjectID"])
 
 
 

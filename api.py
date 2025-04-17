@@ -6,6 +6,8 @@ load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL")
 
+#計畫
+
 def get_plans():
     response = requests.get(f"{BASE_URL}/plans/")
     return response.json()
@@ -51,9 +53,34 @@ def update_project(project_id,data):
     response = requests.patch(f"{BASE_URL}/projects/{project_id}", json=data)
     return response.json()
 
-#刪除工程
 def delete_project(project_id):
     response = requests.delete(f"{BASE_URL}/projects/{project_id}")
+    return response.json()
+
+# 水路
+
+def create_channel(data):
+    response = requests.post(f"{BASE_URL}/channels/", json=data)
+    return response.json()
+
+def get_channels():
+    response = requests.get(f"{BASE_URL}/channels/")
+    return response.json()
+
+def get_channel(channel_id):
+    response = requests.get(f"{BASE_URL}/channels/{channel_id}")
+    return response.json()
+
+def get_project_channels(project_id):
+    response = requests.get(f"{BASE_URL}/channels/project/{project_id}")
+    return response.json()
+
+def update_channel(channel_id,data):
+    response = requests.patch(f"{BASE_URL}/channels/{channel_id}", json=data)
+    return response.json()
+
+def delete_channel(channel_id):
+    response = requests.delete(f"{BASE_URL}/channels/{channel_id}")
     return response.json()
 
 #工作站
@@ -128,11 +155,11 @@ def update_project_date_and_status(project_id, new_status, new_date):
         
         if new_status == "撤案":
             date_column = "WithdrawDate"  # 或你可以選擇 WithdrawDate
-        elif new_status == "計畫核准":
+        elif new_status == "核定":
             date_column = "ApprovalDate"
-        elif new_status == "初稿完成":
+        elif new_status == "初稿":
             date_column = "DraftCompletionDate"
-        elif new_status == "預算書核准":
+        elif new_status == "預算書":
             date_column = "BudgetApprovalDate"
         elif new_status == "招標":
             date_column = "TenderDate"

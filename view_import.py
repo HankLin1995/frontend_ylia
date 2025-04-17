@@ -4,7 +4,7 @@ import pandas as pd
 import time
 from api import update_project,update_project_dates
 from convert import get_project_dates_df
-from api import get_all_project_dates,create_project_dates
+from api import get_all_project_dates,create_project_dates,create_channel
 
 # st.write(get_all_project_dates())
 
@@ -117,44 +117,69 @@ def conver_date(mydate):
         return f"{int(mydate[0]) + 1911}-{mydate[1]}-{mydate[2]}"
     return None
 
-file2=st.file_uploader("選擇Excel檔案2", type=["xlsx"],key="file2")
+# file2=st.file_uploader("選擇Excel檔案2", type=["xlsx"],key="file2")
 
-if file2 is not None:
+# if file2 is not None:
 
+#     sheet_name=st.text_input("Sheet名稱")
+
+#     df = pd.read_excel(file2, sheet_name=sheet_name)
+#     #114/04/10 to 2025-04-10
+#     df["決標日期"] = df["決標日期"].apply(conver_date)
+#     # df["預算書完成日期"] = pd.to_datetime(df["預算書完成日期"], format='%Y/%m/%d').dt.strftime('%Y-%m-%d')
+#     st.dataframe(df,hide_index=True)
+
+#     if st.button("更新決標日期"):
+#         for _,row in df.iterrows():
+#             project_id = row["工程ID"]
+#             mytype=row["屬性"]
+
+#             if mytype == "決標":
+#                 project_date_data = {
+#                     "ProjectID": project_id,
+#                     "AwardDate": row["決標日期"]
+#                 }
+#                 mystatus="決標"
+#             else:
+#                 project_date_data = {
+#                     "ProjectID": project_id,
+#                     "TenderDate": row["決標日期"]
+#                 }
+#                 mystatus="招標"
+
+#             response = update_project_dates(project_id,project_date_data)
+#             st.write(response)
+
+#             if response["ProjectID"]:
+#                 st.toast(f"{response['ProjectID']} 更新成功",icon="✅")
+
+#                 update_project(project_id, {"CurrentStatus": mystatus})
+#             else:
+#                 st.toast("更新失敗",icon="❌")
+#             time.sleep(1)
+#             # st.rerun()
+
+file3=st.file_uploader("選擇Excel檔案3", type=["xlsx"],key="file3")
+
+if file3 is not None:
     sheet_name=st.text_input("Sheet名稱")
+    df = pd.read_excel(file3, sheet_name=sheet_name,header=3)
+    # st.dataframe(df,hide_index=True)
 
-    df = pd.read_excel(file2, sheet_name=sheet_name)
-    #114/04/10 to 2025-04-10
-    df["決標日期"] = df["決標日期"].apply(conver_date)
-    # df["預算書完成日期"] = pd.to_datetime(df["預算書完成日期"], format='%Y/%m/%d').dt.strftime('%Y-%m-%d')
-    st.dataframe(df,hide_index=True)
+    # 只保留工程序號中包含'-'的資料
+    df = df[df['工程序號'].str.contains('-', na=False)]
+    df["工程序號"] = df["工程序號"].astype(str).str.replace(r'-\d+$', '', regex=True)
+    result = df[["工程序號", "工程名稱"]]
+    st.dataframe(result, hide_index=True)
 
-    if st.button("更新決標日期"):
-        for _,row in df.iterrows():
-            project_id = row["工程ID"]
-            mytype=row["屬性"]
-
-            if mytype == "決標":
-                project_date_data = {
-                    "ProjectID": project_id,
-                    "AwardDate": row["決標日期"]
-                }
-                mystatus="決標"
-            else:
-                project_date_data = {
-                    "ProjectID": project_id,
-                    "TenderDate": row["決標日期"]
-                }
-                mystatus="招標"
-
-            response = update_project_dates(project_id,project_date_data)
+    if st.button("新增水路"):
+        for _, row in result.iterrows():
+            project_id = row["工程序號"]
+            channel_name = row["工程名稱"]
+            data = {
+                "ProjectID": project_id,
+                "Name": channel_name
+            }
+            response = create_channel(data)
             st.write(response)
-
-            if response["ProjectID"]:
-                st.toast(f"{response['ProjectID']} 更新成功",icon="✅")
-
-                update_project(project_id, {"CurrentStatus": mystatus})
-            else:
-                st.toast("更新失敗",icon="❌")
-            time.sleep(1)
-            # st.rerun()
+        

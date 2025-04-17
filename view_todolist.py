@@ -8,8 +8,12 @@ st.subheader("🏐待辦事項")
 # ✅ 表示完成，⬜ 表示尚未完成
 todo_list = {
     "撤案功能": True,
-    "連接官網尋找決標、招標事宜": False,
-    "水路基本資料建檔":False
+    "連接官網尋找決標、招標事宜": True,
+    "水路基本資料建檔":False,
+    "工程基本資料介面": False,
+    "使用者介面": False,
+    "多重查詢": False,
+    "LINE BOT 查詢": False
 }
 
 for task, done in todo_list.items():
