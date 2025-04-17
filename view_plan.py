@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 
-from convert import get_plans_df,get_projects_df,get_status_emoji
+from convert import get_plans_df,get_projects_df,get_status_emoji,get_workstations_df
 from api import get_plans,get_plan,create_project
 
 @st.dialog("🗂️ 匯入計畫明細")
@@ -90,6 +90,38 @@ def import_excel():
             st.cache_data.clear()
             st.rerun()
 
+@st.dialog("➕新增工程")
+def create_project_ui(plan_id):
+
+    plan=get_plan(plan_id)
+    st.write(f"計畫編號: {plan['PlanID']}")
+    st.info(f"{plan['PlanName']}")
+
+    st.markdown("---")
+
+    project_id = st.text_input("工程編號")
+    project_name = st.text_input("工程名稱")
+    workstation = st.selectbox("工作站",get_workstations_df()["工作站"].tolist())
+    approval_budget = st.number_input("核定金額", min_value=0)
+
+    plan=get_plan(plan_id)
+
+    if plan["ApprovalDoc"]:
+        current_status = "核定"
+    else:
+        current_status = "提報"
+
+    if st.button("新增"):
+        response = create_project(project_id, plan_id, project_name, approval_budget, current_status)
+        st.write(response)
+        if response["ProjectID"]:
+            st.toast("新增成功",icon="✅")
+        else:
+            st.toast("新增失敗",icon="❌")
+        time.sleep(1)
+        st.cache_data.clear()
+        st.rerun()
+
 # ##### MAIN UI #####
 
 
@@ -111,5 +143,6 @@ st.dataframe(df,hide_index=True,column_config={"計畫編號":None,"建立時間
 if st.sidebar.button("🗂️ 匯入計畫明細"):
     import_excel()
 
-
+if st.button("新增工程",icon="➕"):
+    create_project_ui(plan_id)
 
