@@ -1,6 +1,6 @@
 import streamlit as st
 
-VERSION="1.2.2"
+VERSION="1.3.0"
 
 st.set_page_config(page_title=f"工程管理系統-V{VERSION}",layout="wide")
 st.logo("LOGO.PNG")

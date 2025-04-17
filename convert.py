@@ -6,7 +6,8 @@ from api import (
     get_projects,
     get_all_project_dates,
     get_workstations,
-    get_all_changes
+    get_all_changes,
+    get_channels
 )
 
 @st.cache_data
@@ -53,6 +54,14 @@ def get_changes_df():
         return pd.DataFrame()
     df = pd.DataFrame(changes)
     df.columns=["工程編號","原金額","新金額","變更原因","變更日期","文號","PDFPath","ID","建立時間"]
+    return df
+
+@st.cache_data
+def get_channels_df():
+    channels = get_channels()
+    df = pd.DataFrame(channels)
+    df=df[["ID","ProjectID","Name","CreateTime"]]
+    df.columns=["水路編號","工程編號","水路名稱","建立時間"]
     return df
 
 def get_status_emoji(status):

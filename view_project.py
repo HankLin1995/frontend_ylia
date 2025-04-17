@@ -11,7 +11,7 @@ from api import (
     get_project_changes,
     get_project_channels,
 )
-from convert import get_projects_df,get_workstations_df,get_plans_df,get_status_emoji
+from convert import get_projects_df,get_workstations_df,get_plans_df,get_status_emoji,get_channels_df
 
 DATE_MAP = {
     "ComplaintDate": "陳情日期",
@@ -25,48 +25,6 @@ DATE_MAP = {
     "WithdrawDate":"撤案日期",
     "UpdateTime": "更新時間"
 }
-
-def display_text(plan,project):
-
-    with st.container(border=True):
-
-        # st.markdown("##### 🍪計畫")
-        st.write("🍪計畫")
-
-        col1,col2,col3 = st.columns(3)
-
-        with col1:
-            st.markdown("###### 🔹 計畫名稱")
-            st.write(f"{plan['PlanName']}")
-
-        with col2:
-            st.markdown("###### 🔹 計畫編號")
-            st.write(f"{plan['PlanID']}")
-
-        with col3:
-            st.markdown("###### 🔹 核定金額")
-            st.write(f"{project['ApprovalBudget']}")
-
-    with st.container(border=True):
-        st.markdown("##### 📋工程")
-
-        col1,col2,col3 = st.columns(3)
-
-        with col1:
-            st.markdown("###### 🔹 年度")
-            st.write(f"{plan['Year']}")
-            st.markdown("###### 🔹 狀態")
-            emoji = get_status_emoji(project["CurrentStatus"])
-            st.write(f"{emoji} {project['CurrentStatus']}")
-
-        with col2:
-            st.markdown("###### 🔹 工程名稱")
-            st.write(f"{project['ProjectName']}")
-            st.markdown("###### 🔹 工程編號")
-            st.write(f"{project['ProjectID']}")
-        with col3:
-            st.markdown("###### 🔹 工作站")
-            st.write(f"{project['Workstation']}")
 
 def display_table(plan,project,project_changes):
     # 使用 Pandas DataFrame 來顯示表格
@@ -131,7 +89,7 @@ def display_timeline(project_dates):
     # with st.container(border=True):
     st_timeline(timeline_items, groups=[], options={}, height="300px")
 
-def get_selected_project():
+def get_selected_project(df):
 
     with st.sidebar.container(border=True):
         st.subheader("🔍 工程搜尋")
@@ -146,19 +104,27 @@ def get_selected_project():
         # 應用篩選條件
         filtered_df = df.copy()
 
+        df_channels = get_channels_df()
+        #merge df_channels with df
+        filtered_df = pd.merge(filtered_df, df_channels, on="工程編號", how="left")
+
+        # st.write(filtered_df)
+
         if search_plan_id != "全部":
+
             mask = (filtered_df['計畫編號'] == search_plan_id)
             filtered_df = filtered_df[mask]
 
         # 搜尋文字篩選
         if search_text:
             mask = (filtered_df['工程名稱'].str.contains(search_text, na=False)) | \
-                (filtered_df['工程編號'].str.contains(search_text, na=False))
+                (filtered_df['工程編號'].str.contains(search_text, na=False)) | \
+                (filtered_df['水路名稱'].str.contains(search_text, na=False))
             filtered_df = filtered_df[mask]
 
         selected_project = st.selectbox(
             "選擇工程", 
-            filtered_df["工程名稱"],
+            filtered_df["工程名稱"].unique(),
             placeholder="請選擇工程..."
         )
         
@@ -281,7 +247,7 @@ def update_approval_content(project_id):
 
 df = get_projects_df()
 
-selected_project_id = get_selected_project()
+selected_project_id = get_selected_project(df)
 
 if selected_project_id:
 
@@ -306,14 +272,8 @@ with tab1:
         channels_df = pd.DataFrame(project_channels)
 
         for _,row in channels_df.iterrows():
-            #emoji
             st.badge(f"{row['Name']}",color="green")
 
-        # st.pills("",channels_df['Name'].tolist())
-        
-        # st.dataframe(channels_df["ID","Name"],hide_index=True)
-
-    # st.write(project_dates)
     if "detail" in project_dates:
         st.warning("查無相關日程內容",icon="⚠️")
     else:
