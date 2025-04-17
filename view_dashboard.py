@@ -217,7 +217,7 @@ st.subheader("🎯 工程管理儀表板")
 # 獲取和過濾數據
 df_merge = get_total_df()
 
-st.dataframe(df_merge,hide_index=True)
+# st.dataframe(df_merge,hide_index=True)
 
 df_filtered = filter_df(df_merge).copy()
 
