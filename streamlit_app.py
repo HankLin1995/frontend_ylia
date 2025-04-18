@@ -45,6 +45,9 @@ if st.session_state.role == "NONE":
 
                     myrole=white_list(res['organization_units'][0][0:3])
                     st.session_state.role = myrole
+                    if myrole == "NONE":
+                        st.error("❌ 權限不足，請聯絡---設計股林宗漢。")
+                    time.sleep(3)
                     st.rerun()
 
                 else:
@@ -52,11 +55,7 @@ if st.session_state.role == "NONE":
 
 else:
 
-    if st.session_state.role == "NONE":
-        st.error("❌ 權限不足，請聯絡---設計股林宗漢。")
-        st.rerun()
-
-    elif st.session_state.role == "VIEWER":
+    if st.session_state.role == "VIEWER":
 
         pg=st.navigation(
             {

@@ -127,6 +127,7 @@ def white_list(ou_list):
 
     # 其他都不是
     return "NONE"
+
 # if __name__ == "__main__":
    
 #     # 測試用戶名和密碼
