@@ -1,14 +1,14 @@
 import streamlit as st
-from auth import check_ad_credentials, get_user_info_one, parse_dn
+from auth import check_ad_credentials, get_user_info_one, parse_dn, white_list
 import time
 
-VERSION="1.4.0"
+VERSION="1.4.1"
 
 st.set_page_config(page_title=f"工程管理系統-V{VERSION}",layout="wide")
 st.logo("LOGO.PNG")
 
-if "is_authenticated" not in st.session_state:
-    st.session_state.is_authenticated = False
+if "role" not in st.session_state:
+    st.session_state.role = "NONE"
 
 workstation_page = st.Page("view_workstations.py", title="基本設定", icon=":material/settings:")
 
@@ -25,7 +25,7 @@ view_channels_page = st.Page("view_channels.py", title="水路清單", icon=":ma
 
 todolist_page = st.Page("view_todolist.py", title="待辦事項", icon=":material/checklist:")
 
-if not st.session_state.is_authenticated:
+if st.session_state.role == "NONE":
 
     col1, col2, col3 = st.columns([1, 1, 1])  # 中間那欄比較寬
 
@@ -41,24 +41,46 @@ if not st.session_state.is_authenticated:
                     # 登入成功，取得使用者資訊
                     user_info = get_user_info_one("sAMAccountName", username)
                     res=parse_dn(user_info['DP_STR'])
-                    st.toast(f"🎉 正在登入 {res} ...")
-                    st.session_state.is_authenticated = True
-                    time.sleep(1)
+                    st.toast(f"🎉 登入成功 {user_info['USR_NAME']} ...")
+
+                    myrole=white_list(res['organization_units'][0][0:3])
+                    st.session_state.role = myrole
                     st.rerun()
+
                 else:
                     st.error("❌ 帳號或密碼錯誤，請再試一次。")
 
 else:
 
-    pg=st.navigation(
-        {
-            "設定":[workstation_page],
-            "計畫":[plan_page,plan_detail_page,project_changes_page],
-            "工程":[project_detail_page],
-            "水路":[view_channels_page],
-            "分析":[dashboard_page],
-            "開發用":[import_page,todolist_page]
-        }
-    )
+    if st.session_state.role == "NONE":
+        st.error("❌ 權限不足，請聯絡---設計股林宗漢。")
+        st.rerun()
 
-    pg.run()
+    elif st.session_state.role == "VIEWER":
+
+        pg=st.navigation(
+            {
+
+                "工程":[project_detail_page],
+                "分析":[dashboard_page],
+
+            }
+        )
+
+        pg.run()
+
+    elif st.session_state.role == "EDITOR":
+
+
+        pg=st.navigation(
+            {
+                "設定":[workstation_page],
+                "計畫":[plan_page,plan_detail_page,project_changes_page],
+                "工程":[project_detail_page],
+                "水路":[view_channels_page],
+                "分析":[dashboard_page],
+                "開發用":[import_page,todolist_page]
+            }
+        )
+
+        pg.run()

@@ -106,6 +106,27 @@ def parse_dn(dn):
         'domain_components': dc_list
     }
 
+
+def white_list(ou_list):
+    accept_ou = ["010", "020", "030", "051", "052", "053", "054", "1C0", "1CH", "2D0", "2DD", "3E0", "3EC", "4F0", "4FD", "5G0", "5G4"]
+    edit_ou =["051"]
+
+    # 統一轉成 list 處理
+    if isinstance(ou_list, str):
+        ou_list = [ou_list]
+
+    # 先檢查是否為編輯者
+    for ou in ou_list:
+        if ou.strip() in edit_ou:
+            return "EDITOR"
+
+    # 再檢查是否為接受者
+    for ou in ou_list:
+        if ou.strip() in accept_ou:
+            return "VIEWER"
+
+    # 其他都不是
+    return "NONE"
 # if __name__ == "__main__":
    
 #     # 測試用戶名和密碼

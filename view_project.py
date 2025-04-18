@@ -26,6 +26,11 @@ DATE_MAP = {
     "UpdateTime": "更新時間"
 }
 
+if st.session_state.role =="EDITOR":
+    btn_access=True
+else:
+    btn_access=False
+
 def display_table(plan,project,project_changes):
     # 使用 Pandas DataFrame 來顯示表格
     plan_data = {
@@ -150,7 +155,7 @@ def update_workstation_content(exist_workstation):
             df_workstations = df_workstations[mask]
         selected_workstation = st.selectbox("選擇",df_workstations["工作站"])
     
-    if st.button("更新工作站",key="update_workstation"):
+    if st.button("更新工作站",key="update_workstation",disabled=not btn_access):
         data={
             "Workstation": selected_workstation
         }
@@ -200,7 +205,7 @@ def update_dates_content(project_id,project_dates):
     with col3:
         pass
 
-    if st.button("更新日期",key="update_dates"): 
+    if st.button("更新日期",key="update_dates",disabled=not btn_access): 
 
         data={}
 
