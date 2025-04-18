@@ -4,5 +4,6 @@ requests
 python-dotenv
 openpyxl
 streamlit-vis-timeline
+ldap3
 plotly
 seaborn
