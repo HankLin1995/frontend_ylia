@@ -3,7 +3,7 @@ import pandas as pd
 import time
 
 from convert import get_plans_df,get_projects_df,get_status_emoji,get_workstations_df
-from api import get_plans,get_plan,create_project
+from api import get_plans,get_plan,create_project,update_project,create_project_dates
 
 @st.dialog("🗂️ 匯入計畫明細")
 def import_excel():
@@ -118,6 +118,33 @@ def create_project_ui(plan_id):
             st.toast("新增成功",icon="✅")
         else:
             st.toast("新增失敗",icon="❌")
+
+        ## 更新工作站
+
+        data={
+            "Workstation": workstation
+        }
+
+        response = update_project(project_id,data)
+        st.write(response)
+        if response["ProjectID"]:
+            st.toast("更新成功",icon="✅")
+        else:
+            st.toast("更新失敗",icon="❌")
+
+        ## 新建日期索引
+
+        data={
+            "ProjectID": project_id
+        }
+
+        response = create_project_dates(project_id,data)
+        st.write(response)
+        if response["ProjectID"]:
+            st.toast("新增日期索引成功",icon="✅")
+        else:
+            st.toast("新增日期索引失敗",icon="❌")
+
         time.sleep(1)
         st.cache_data.clear()
         st.rerun()
