@@ -34,7 +34,7 @@ def filter_df(df_merge):
         #plan id
         with col3:
             search_plan_id_list = get_plans_df()[get_plans_df()["年度"] == search_year]["計畫編號"].tolist()
-            search_plan_id_list = st.multiselect("計畫編號", search_plan_id_list,default=search_plan_id_list[0])
+            search_plan_id_list = st.multiselect("計畫編號", search_plan_id_list,default=search_plan_id_list[1])
 
             if search_plan_id_list:
                 df_merge = df_merge[df_merge["計畫編號"].isin(search_plan_id_list)]
