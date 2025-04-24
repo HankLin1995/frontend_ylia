@@ -2,7 +2,7 @@ import streamlit as st
 from auth import check_ad_credentials, get_user_info_one, parse_dn, white_list
 import time
 
-VERSION="1.4.2"
+VERSION="1.4.3"
 
 st.set_page_config(page_title=f"工程管理系統-V{VERSION}",layout="wide")
 st.logo("LOGO.PNG")
@@ -42,7 +42,7 @@ if st.session_state.role == "NONE":
                     user_info = get_user_info_one("sAMAccountName", username)
                     res=parse_dn(user_info['DP_STR'])
                     st.toast(f"🎉 登入成功 {user_info['USR_NAME']} ...")
-
+                    st.cache_data.clear()
                     myrole=white_list(res['organization_units'][0][0:3])
                     st.session_state.role = myrole
                     if myrole == "NONE":
