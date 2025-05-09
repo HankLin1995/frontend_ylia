@@ -33,6 +33,62 @@ def check_ad_credentials(username, password):
         print(f"❌ 其他錯誤: {ex}")
         return False
 
+def get_all_active_users():
+    try:
+        print(f"📥 連線至 AD 伺服器 {AD_SERVER_NAME} 抓取所有使用者（排除停用）")
+
+        server = Server(AD_SERVER_NAME, get_info=ALL)
+        conn = Connection(
+            server,
+            user=AD_ADMIN_USER,
+            password=AD_ADMIN_PASSWORD,
+            authentication='SIMPLE',
+            auto_bind=True
+        )
+
+        search_filter = "(&(objectCategory=user))"
+
+        conn.search(
+            search_base=BASE_DN,
+            search_filter=search_filter,
+            search_scope=SUBTREE,
+            attributes=[
+                'displayName',
+                'description',
+                'userPrincipalName',
+                'sAMAccountName',
+                'distinguishedName'
+            ],
+            paged_size=1000
+        )
+
+        results = []
+        for entry in conn.entries:
+            dn = entry.distinguishedName.value or ''
+            if "OU=停用人員" in dn:
+                continue  # ⛔️ 排除在 OU=停用人員 底下的人
+
+            results.append({
+                'USR_NAME': entry.displayName.value or '',
+                'TITLE': entry.description.value or '',
+                'EMAIL': entry.userPrincipalName.value or '',
+                'ACCOUNT': entry.sAMAccountName.value or '',
+                'DN': dn
+            })
+
+            print(f"✅ 使用者: {entry.displayName.value} ({entry.sAMAccountName.value}) - DN: {dn}")
+
+        print(f"✅ 有效使用者共 {len(results)} 位")
+        conn.unbind()
+        return results
+
+    except LDAPException as e:
+        print(f"❌ LDAP 錯誤: {e}")
+        return []
+    except Exception as ex:
+        print(f"❌ 其他錯誤: {ex}")
+        return []
+
 def get_user_info_one(s_type, s_data):
 
     try:
@@ -129,6 +185,7 @@ def white_list(ou_list):
     return "NONE"
 
 # if __name__ == "__main__":
+#     get_all_active_users()
    
 #     # 測試用戶名和密碼
 #     test_username = "zong-han01273"
