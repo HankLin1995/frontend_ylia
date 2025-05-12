@@ -233,9 +233,22 @@ with col2:
     show_approved_amount_pie(df_filtered)
 
 # 顯示過濾後的數據表
-st.markdown("##### 📋 工程清單")
 
-df_filtered["目前狀態"] = df_filtered["目前狀態"].map(get_status_emoji) + " " + df_filtered["目前狀態"]
-df_filtered = df_filtered[["工程編號", "工程名稱", "工作站", "核定金額", "目前狀態"]]
+with st.container(border=True):
 
-st.dataframe(df_filtered, hide_index=True, use_container_width=True)
+    st.markdown("##### 📋 工程清單")
+
+    col1,col2=st.columns([1,1])
+
+    with col1:
+        status_filter =st.multiselect("狀態",df_filtered["目前狀態"].unique(),default=df_filtered["目前狀態"].unique())
+        df_filtered = df_filtered[df_filtered["目前狀態"].isin(status_filter)]
+
+    with col2:
+        division_filter =st.multiselect("所屬分處",df_filtered["所屬分處"].unique(),default=df_filtered["所屬分處"].unique())
+        df_filtered = df_filtered[df_filtered["所屬分處"].isin(division_filter)]
+
+    df_filtered["目前狀態"] = df_filtered["目前狀態"].map(get_status_emoji) + " " + df_filtered["目前狀態"]
+    df_filtered = df_filtered[["工程編號", "工程名稱","所屬分處","工作站", "核定金額", "目前狀態"]]
+
+    st.dataframe(df_filtered, hide_index=True, use_container_width=True)

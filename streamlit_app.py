@@ -2,7 +2,7 @@ import streamlit as st
 from auth import check_ad_credentials, get_user_info_one, parse_dn, white_list
 import time
 
-VERSION="1.4.3"
+VERSION="1.4.5"
 
 st.set_page_config(page_title=f"工程管理系統-V{VERSION}",layout="wide")
 st.logo("LOGO.PNG")
@@ -31,6 +31,7 @@ if st.session_state.role == "NONE":
 
     with col2:  # 中間的欄位
         st.subheader("請輸入EIP帳號密碼")
+        st.caption("如有使用上的問題請聯繫>工務組林宗漢(05-5324126#303)")
         with st.form("login_form", clear_on_submit=False):
             username = st.text_input("👤 帳號")
             password = st.text_input("🔑 密碼", type="password")
