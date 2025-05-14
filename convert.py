@@ -28,7 +28,7 @@ def get_plans_df():
 def get_projects_df():
     projects = get_projects()
     df = pd.DataFrame(projects)
-    df.columns=["工程編號","計畫編號","工程名稱","工作站","核定金額","目前狀態","建立時間"]
+    df.columns=["工程編號","計畫編號","工程名稱","工作站","核定金額","目前狀態","E化管考代碼","建立時間"]
 
     return df
 
@@ -36,7 +36,7 @@ def get_projects_df():
 def get_project_dates_df():
     project_dates = get_all_project_dates()
     df = pd.DataFrame(project_dates)
-    df.columns=["工程編號","陳情日期","提報日期","測設日期","經費核准日期","初稿完成日期","預算書完成日期","招標日期","決標日期","撤案日期","更新時間"]
+    df.columns=["工程編號","陳情日期","提報日期","測設日期","經費核准日期","初稿完成日期","預算書完成日期","招標日期","決標日期","撤案日期","訂約日期","開工日期","完工日期","驗收日期","更新時間"]
     return df
 
 @st.cache_data

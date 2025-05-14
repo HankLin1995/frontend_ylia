@@ -31,7 +31,7 @@ def convert_roc_to_gregorian(roc_date):
 
 # if file is not None:  
 
-#     df = pd.read_excel(file)
+#     df = pd.read_excel(file, encoding='big5')  # Try different encodings like 'big5', 'cp950', 'utf-8-sig'
 
 #     # 使用 apply() 函數進行轉換
 
@@ -159,27 +159,52 @@ def conver_date(mydate):
 #             time.sleep(1)
 #             # st.rerun()
 
-file3=st.file_uploader("選擇Excel檔案3", type=["xlsx"],key="file3")
+# file3=st.file_uploader("選擇Excel檔案3", type=["xlsx"],key="file3")
 
-if file3 is not None:
-    sheet_name=st.text_input("Sheet名稱")
-    df = pd.read_excel(file3, sheet_name=sheet_name,header=3)
-    # st.dataframe(df,hide_index=True)
+# if file3 is not None:
+#     sheet_name=st.text_input("Sheet名稱")
+#     df = pd.read_excel(file3, sheet_name=sheet_name,header=3)
+#     # st.dataframe(df,hide_index=True)
 
-    # 只保留工程序號中包含'-'的資料
-    df = df[df['工程序號'].str.contains('-', na=False)]
-    df["工程序號"] = df["工程序號"].astype(str).str.replace(r'-\d+$', '', regex=True)
-    result = df[["工程序號", "工程名稱"]]
-    st.dataframe(result, hide_index=True)
+#     # 只保留工程序號中包含'-'的資料
+#     df = df[df['工程序號'].str.contains('-', na=False)]
+#     df["工程序號"] = df["工程序號"].astype(str).str.replace(r'-\d+$', '', regex=True)
+#     result = df[["工程序號", "工程名稱"]]
+#     st.dataframe(result, hide_index=True)
 
-    if st.button("新增水路"):
-        for _, row in result.iterrows():
-            project_id = row["工程序號"]
-            channel_name = row["工程名稱"]
-            data = {
-                "ProjectID": project_id,
-                "Name": channel_name
-            }
-            response = create_channel(data)
-            st.write(response)
-        
+#     if st.button("新增水路"):
+#         for _, row in result.iterrows():
+#             project_id = row["工程序號"]
+#             channel_name = row["工程名稱"]
+#             data = {
+#                 "ProjectID": project_id,
+#                 "Name": channel_name
+#             }
+#             response = create_channel(data)
+#             st.write(response)
+
+file4=st.file_uploader("選擇Excel檔案4", type=["csv"],key="file4")
+
+col1,col2=st.columns(2)
+
+with col1:
+
+    if file4 is not None:
+        df = pd.read_csv(file4, encoding='big5', encoding_errors='replace')  # Replace invalid characters
+        # st.dataframe(df,hide_index=True)
+        # 取得不重複的AP_CODE和AP_NAME組合
+        unique_ap = df[["AP_CODE", "AP_NAME"]].drop_duplicates()
+        st.write("不重複的AP_CODE和AP_NAME:")
+        unique_ap=pd.DataFrame(unique_ap)
+        st.dataframe(unique_ap, hide_index=True)
+
+with col2:
+    import api
+    projects=api.get_projects()
+    st.write("所有工程:")
+    projects=pd.DataFrame(projects)
+    st.dataframe(projects,hide_index=True)
+    
+
+merged_df = pd.merge(unique_ap, projects, left_on="AP_NAME", right_on="ProjectName", how="right")
+st.dataframe(merged_df,hide_index=True)
