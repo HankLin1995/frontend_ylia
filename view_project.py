@@ -23,6 +23,10 @@ DATE_MAP = {
     "TenderDate": "招標日期",
     "AwardDate": "決標日期",
     "WithdrawDate":"撤案日期",
+    "ContractDate":"訂約日期",
+    "StartDate":"(預定)開工日期",
+    "FinishDate":"(預定)完工日期",
+    "CompletionDate":"驗收日期",
     "UpdateTime": "更新時間"
 }
 
@@ -74,7 +78,7 @@ def display_table(plan,project,project_changes):
         st.markdown("##### 📋工程")
         st.dataframe(df_project,hide_index=True)
 
-
+@st.fragment
 def display_timeline(project_dates):
 
     from streamlit_timeline import st_timeline
@@ -91,8 +95,27 @@ def display_timeline(project_dates):
 
     st.markdown("##### 🕰️工程日期")
 
+    radio = st.radio("顯示方式", ["時間軸", "文字(按照時間排序)"],horizontal=True)
+
     # with st.container(border=True):
-    st_timeline(timeline_items, groups=[], options={}, height="300px")
+    if radio == "時間軸":
+
+        st_timeline(timeline_items, groups=[], options={}, height="300px")
+
+    else:
+
+        # st.markdown("##### 📝工程日期(按照時間排序)")
+        # Sort timeline items by start date
+        today_item = [{"id": 0, "content": "===== 今日("+str(pd.to_datetime("now").date())+") =====", "start": pd.to_datetime("now").date()}]
+        sorted_items = sorted(timeline_items + today_item, key=lambda x: pd.to_datetime(x["start"]), reverse=True)
+        
+        with st.container(border=True):
+            # Display sorted items in a more readable format
+            for item in sorted_items:
+                if item["content"] == "===== 今日("+str(pd.to_datetime("now").date())+") =====":
+                    st.info(f"- {item['content']}")
+                else:
+                    st.markdown(f"- {item['content']}")
 
 def get_selected_project(df):
 

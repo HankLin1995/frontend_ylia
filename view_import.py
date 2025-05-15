@@ -190,21 +190,39 @@ col1,col2=st.columns(2)
 with col1:
 
     if file4 is not None:
-        df = pd.read_csv(file4, encoding='big5', encoding_errors='replace')  # Replace invalid characters
-        # st.dataframe(df,hide_index=True)
-        # 取得不重複的AP_CODE和AP_NAME組合
-        unique_ap = df[["AP_CODE", "AP_NAME"]].drop_duplicates()
-        st.write("不重複的AP_CODE和AP_NAME:")
-        unique_ap=pd.DataFrame(unique_ap)
-        st.dataframe(unique_ap, hide_index=True)
+        df = pd.read_csv(file4, encoding='utf-8', encoding_errors='replace',)  # Replace invalid characters
+        df['TD_CODE'] = df['TD_CODE'].astype(str)
+        st.dataframe(df,hide_index=True)
+
 
 with col2:
     import api
     projects=api.get_projects()
-    st.write("所有工程:")
     projects=pd.DataFrame(projects)
     st.dataframe(projects,hide_index=True)
     
 
-merged_df = pd.merge(unique_ap, projects, left_on="AP_NAME", right_on="ProjectName", how="right")
+merged_df = pd.merge(df, projects, left_on="TD_CODE", right_on="TD_CODE", how="left")
 st.dataframe(merged_df,hide_index=True)
+
+# file5=st.file_uploader("選擇Excel檔案5", type=["xlsx"],key="file5")
+
+# if file5 is not None:
+#     df = pd.read_excel(file5, sheet_name="main", dtype={"TD_CODE": str})
+#     st.dataframe(df,hide_index=True)
+
+#     if st.button("更新TD_CODE"):
+
+#         # 只更新前三個工程
+#         for _, row in df.iterrows():
+#             project_id = row["ProjectID"]
+#             td_code = str(row["TD_CODE"])
+#             if pd.isna(td_code):
+#                 continue
+#             response=update_project(project_id, {"TD_CODE": td_code})
+#             if "ProjectID" in response :
+#                 st.toast(f"{response['ProjectID']} 更新成功",icon="✅")
+#             else:
+#                 st.toast("更新失敗",icon="❌")
+#             time.sleep(1)
+#         st.rerun()
