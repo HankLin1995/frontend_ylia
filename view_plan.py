@@ -39,7 +39,7 @@ def import_excel():
         df = df.dropna(how='all')
 
         #取得第五行之後，第一欄、第三欄、第十六欄的資料，並且第一欄不能為空白
-        df = df.iloc[3:]
+        df = df.iloc[2:]
 
         for _,col in df.iterrows():
             if pd.notna(col.iloc[0]) :
