@@ -4,7 +4,7 @@ import pandas as pd
 import time
 from api import update_project,update_project_dates
 from convert import get_project_dates_df
-from api import get_all_project_dates,create_project_dates,create_channel
+from api import get_all_project_dates,create_project_dates,create_channel,update_project_channel
 
 # st.write(get_all_project_dates())
 
@@ -159,51 +159,60 @@ def conver_date(mydate):
 #             time.sleep(1)
 #             # st.rerun()
 
-# file3=st.file_uploader("選擇Excel檔案3", type=["xlsx"],key="file3")
+file3=st.file_uploader("選擇Excel檔案3", type=["xlsx"],key="file3")
 
-# if file3 is not None:
-#     sheet_name=st.text_input("Sheet名稱")
-#     df = pd.read_excel(file3, sheet_name=sheet_name,header=3)
-#     # st.dataframe(df,hide_index=True)
+if file3 is not None:
+    sheet_name=st.text_input("Sheet名稱",value="工程明細表")
+    df = pd.read_excel(file3, sheet_name=sheet_name,header=3)
+    # st.dataframe(df,hide_index=True)
 
-#     # 只保留工程序號中包含'-'的資料
-#     df = df[df['工程序號'].str.contains('-', na=False)]
-#     df["工程序號"] = df["工程序號"].astype(str).str.replace(r'-\d+$', '', regex=True)
-#     result = df[["工程序號", "工程名稱"]]
-#     st.dataframe(result, hide_index=True)
+    # 只保留工程序號中包含'-'的資料
+    df = df[df['工程序號'].str.contains('-', na=False)]
+    df["工程序號"] = df["工程序號"].astype(str).str.replace(r'-\d+$', '', regex=True)
+        # 將經費欄位轉成整數
+    df["工程經費\n(元)"] = (
+        df["工程經費\n(元)"]
+        .astype(str)
+        .str.replace(",", "")
+        .str.replace("元", "")  # 如果有 "元" 字也一起移除
+        .str.strip()
+        .replace("", "0")  # 若有空值就填0
+        .astype(int)
+    )
+    result = df[["工程序號", "工程名稱","工程經費\n(元)"]]
+    st.dataframe(result, hide_index=True)
 
-#     if st.button("新增水路"):
-#         for _, row in result.iterrows():
-#             project_id = row["工程序號"]
-#             channel_name = row["工程名稱"]
-#             data = {
-#                 "ProjectID": project_id,
-#                 "Name": channel_name
-#             }
-#             response = create_channel(data)
-#             st.write(response)
+    if st.button("新增水路"):
+        for _, row in result.iterrows():
+            project_id = row["工程序號"]
+            channel_name = row["工程名稱"]
+            data = {
+                "Cost": row["工程經費\n(元)"]
+            }
+            response = update_project_channel(project_id,channel_name,data)
+            st.write(response)
 
-file4=st.file_uploader("選擇Excel檔案4", type=["csv"],key="file4")
+# file4=st.file_uploader("選擇Excel檔案4", type=["csv"],key="file4")
 
-col1,col2=st.columns(2)
+# col1,col2=st.columns(2)
 
-with col1:
+# with col1:
 
-    if file4 is not None:
-        df = pd.read_csv(file4, encoding='utf-8', encoding_errors='replace',)  # Replace invalid characters
-        df['TD_CODE'] = df['TD_CODE'].astype(str)
-        st.dataframe(df,hide_index=True)
+#     if file4 is not None:
+#         df = pd.read_csv(file4, encoding='utf-8', encoding_errors='replace',)  # Replace invalid characters
+#         df['TD_CODE'] = df['TD_CODE'].astype(str)
+#         st.dataframe(df,hide_index=True)
 
 
-with col2:
-    import api
-    projects=api.get_projects()
-    projects=pd.DataFrame(projects)
-    st.dataframe(projects,hide_index=True)
+# with col2:
+#     import api
+#     projects=api.get_projects()
+#     projects=pd.DataFrame(projects)
+#     st.dataframe(projects,hide_index=True)
     
 
-merged_df = pd.merge(df, projects, left_on="TD_CODE", right_on="TD_CODE", how="left")
-st.dataframe(merged_df,hide_index=True)
+# merged_df = pd.merge(df, projects, left_on="TD_CODE", right_on="TD_CODE", how="left")
+# st.dataframe(merged_df,hide_index=True)
 
 # file5=st.file_uploader("選擇Excel檔案5", type=["xlsx"],key="file5")
 

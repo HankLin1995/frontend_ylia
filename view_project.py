@@ -298,9 +298,23 @@ with tab1:
         st.markdown("##### 🌊水路")
 
         channels_df = pd.DataFrame(project_channels)
+        # st.write(channels_df)
 
-        for _,row in channels_df.iterrows():
-            st.badge(f"{row['Name']}",color="green")
+        st.dataframe(channels_df,hide_index=True,column_config={
+            "Name":"名稱",
+            "Cost":"經費",
+            "ID":None,
+            "ProjectID":None,
+            "CreateTime":None
+            
+        })
+
+        # for _,row in channels_df.iterrows():
+
+        #     if row['Cost']>0:
+        #         st.badge(f"{row['Name']} -經費({int(row['Cost'])})",color="green")
+        #     else:
+        #         st.badge(f"{row['Name']} -經費查無",color="red")
 
     if "detail" in project_dates:
         st.warning("查無相關日程內容",icon="⚠️")

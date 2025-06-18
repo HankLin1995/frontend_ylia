@@ -7,10 +7,12 @@ from convert import get_projects_df
 def create_channel_ui():
     project_id = st.selectbox("工程編號",get_projects_df()["工程編號"])
     channel_name = st.text_input("水路名稱")
+    channel_cost = st.number_input("水路經費",value=0)
     if st.button("新增"):
         data={
             "ProjectID": project_id,
-            "Name": channel_name
+            "Name": channel_name,
+            "Cost": channel_cost
         }
         response = create_channel(data)
         st.write(response)
@@ -31,7 +33,7 @@ channels = get_channels()
 channels_df = pd.DataFrame(channels)
 
 # 假設你想要順序為 ["Name", "ProjectID", "ID"]
-channels_df = channels_df[["ID", "ProjectID", "Name","CreateTime"]]
+channels_df = channels_df[["ID", "ProjectID","Name","Cost","CreateTime"]]
 
 st.dataframe(channels_df,hide_index=True)
 

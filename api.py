@@ -83,6 +83,10 @@ def delete_channel(channel_id):
     response = requests.delete(f"{BASE_URL}/channels/{channel_id}")
     return response.json()
 
+def update_project_channel(project_id,channel_name,data):
+    response = requests.patch(f"{BASE_URL}/channels/project/{project_id}/channel/{channel_name}", json=data)
+    return response.json()
+
 #工作站
 def create_workstation(division,station):
     data={
