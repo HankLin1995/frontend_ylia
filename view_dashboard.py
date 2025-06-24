@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from convert import get_projects_df, get_workstations_df, get_plans_df,get_project_dates_df,get_status_emoji
-
+import numpy as np
 def get_total_df():
     df_plans = get_plans_df()
     df_projects = get_projects_df()
@@ -13,6 +13,32 @@ def get_total_df():
     df_merge = pd.merge(df_projects, df_workstations, on='工作站')
     df_merge = pd.merge(df_merge, df_plans, on='計畫編號')
     df_merge = pd.merge(df_merge, df_project_dates, on='工程編號')
+
+    # 根據目前狀態設定「目前狀態日期」
+    conditions = [
+        # df_merge['目前狀態'] == '提報',
+        df_merge['目前狀態'] == '核定',
+        df_merge['目前狀態'] == '初稿',
+        df_merge['目前狀態'] == '預算書',
+        df_merge['目前狀態'] == '招標',
+        df_merge['目前狀態'] == '決標',
+        df_merge['目前狀態'] == '撤案'
+    ]
+
+    choices = [
+        # df_merge['提報日期'],
+        df_merge['經費核准日期'],
+        df_merge['初稿完成日期'],
+        df_merge['預算書完成日期'],
+        df_merge['招標日期'],
+        df_merge['決標日期'],
+        df_merge['撤案日期']
+    ]
+
+    df_merge['目前狀態日期'] = np.select(conditions, choices, default=pd.NaT)
+    df_merge['距離今日'] = pd.to_datetime("now") - pd.to_datetime(df_merge['目前狀態日期'])
+    df_merge['距離今日'] = df_merge['距離今日'].dt.days
+
 
     # st.write(df_merge)
 
@@ -249,6 +275,6 @@ with st.container(border=True):
         df_filtered = df_filtered[df_filtered["所屬分處"].isin(division_filter)]
 
     df_filtered["目前狀態"] = df_filtered["目前狀態"].map(get_status_emoji) + " " + df_filtered["目前狀態"]
-    df_filtered = df_filtered[["工程編號", "工程名稱","所屬分處","工作站", "核定金額", "目前狀態"]]
+    df_filtered = df_filtered[["工程編號", "工程名稱","所屬分處","工作站", "核定金額", "目前狀態","目前狀態日期","距離今日"]]
 
     st.dataframe(df_filtered, hide_index=True, use_container_width=True)

@@ -13,7 +13,7 @@ todo_list = {
     "工程基本資料介面": True,
     "使用者介面": False,
     "多重查詢": False,
-    "LINE BOT 查詢": False
+    "LINE BOT 查詢": True
 }
 
 for task, done in todo_list.items():
