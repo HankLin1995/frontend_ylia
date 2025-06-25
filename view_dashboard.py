@@ -61,17 +61,15 @@ def filter_df(df_merge):
         with col3:
             search_plan_list=get_plans_df()[get_plans_df()["年度"] == search_year]
             name_to_id_dict=search_plan_list.set_index("計畫名稱")["計畫編號"].to_dict()
-            search_plan_id_list=list(name_to_id_dict.keys())
-            # st.write(search_plan_id_list)
-            # plan_id_to_name=search_plan_list.set_index("計畫編號")["計畫名稱"].to_dict()
-            # search_plan_id_list=list(plan_id_to_name.keys())
-            # st.write(search_plan_id_list)
+            search_plan_name_list=list(name_to_id_dict.keys())
 
             #search_plan_id_list = get_plans_df()[get_plans_df()["年度"] == search_year]["計畫編號"].tolist()
-            search_plan_id_list = st.multiselect("計畫名稱", search_plan_id_list,default=search_plan_id_list[2])
+            search_plan_name_list = st.multiselect("計畫名稱", search_plan_name_list,default=search_plan_name_list[2])
 
-            if search_plan_id_list:
-                df_merge = df_merge[df_merge["計畫名稱"].isin(search_plan_id_list)]
+            selected_ids = [name_to_id_dict[name] for name in search_plan_name_list]
+
+            if selected_ids:
+                df_merge = df_merge[df_merge["計畫編號"].isin(selected_ids)]
         
         if search_division != "全部":
             df_merge = df_merge[df_merge["所屬分處"] == search_division]
