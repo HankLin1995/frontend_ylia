@@ -2,14 +2,13 @@ import streamlit as st
 from auth import check_ad_credentials, get_user_info_one, parse_dn, white_list
 import time
 
-VERSION="1.5.3"
+VERSION="1.5.4"
 
 st.set_page_config(page_title=f"工程管理系統-V{VERSION}",layout="wide")
 st.logo("LOGO.PNG")
 
 if "role" not in st.session_state:
-    st.session_state.role = "NONE"
-
+    st.session_state.role = "N\\ㄍㄛ
 workstation_page = st.Page("view_workstations.py", title="基本設定", icon=":material/settings:")
 
 plan_page = st.Page("view_plans.py", title="計畫清單", icon=":material/assignment:")
