@@ -21,7 +21,7 @@ def create_plan(data,file=None):
     return response.json()
 
 def update_plan(plan_id,data,file=None):
-    response = requests.post(f"{BASE_URL}/plans/{plan_id}/file", data=data, files={"file": file})
+    response = requests.post(f"{BASE_URL}/plans/{plan_id}/document", data=data, files={"file": file})
     return response.json()
 
 def delete_plan(plan_id):
