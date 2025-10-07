@@ -10,15 +10,18 @@ services:
       - .:/app
     networks:
       - app-network
+      - backend_ylia_app-network
     restart: unless-stopped
     
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate --protocol http2 run --token ${CLOUDFLARED_TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TUNNEL_TOKEN}
     networks:
       - app-network
     restart: unless-stopped
 networks:
   app-network:
     driver: bridge
+  backend_ylia_app-network:
+    external: true
