@@ -191,6 +191,30 @@ def update_workstation_content(exist_workstation):
         st.rerun()
 
 @st.fragment
+def update_project_name_content(project_id, current_project_name):
+
+    st.markdown("#### 📝工程名稱")
+
+    new_project_name = st.text_input("工程名稱", value=current_project_name, placeholder="請輸入新的工程名稱...")
+    
+    if st.button("更新工程名稱", key="update_project_name", disabled=not btn_access):
+        if not new_project_name or new_project_name.strip() == "":
+            st.toast("工程名稱不能為空", icon="❌")
+        elif new_project_name == current_project_name:
+            st.toast("工程名稱未變更", icon="⚠️")
+        else:
+            data = {
+                "ProjectName": new_project_name
+            }
+            response = update_project(project_id, data)
+            if response["ProjectID"]:
+                st.toast("更新成功", icon="✅")
+            else:
+                st.toast("更新失敗", icon="❌")
+            time.sleep(1)
+            st.rerun()
+
+@st.fragment
 def update_dates_content(project_id,project_dates):
 
     st.markdown("#### 🕰️工程日期")
@@ -322,6 +346,9 @@ with tab1:
         display_timeline(project_dates)
 
 with tab2:
+    
+    with st.container(border=True):
+        update_project_name_content(project["ProjectID"], project["ProjectName"])
     
     with st.container(border=True):
         update_workstation_content(project["Workstation"])
