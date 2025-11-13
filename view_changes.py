@@ -225,8 +225,9 @@ def delete_change_record_ui():
 
     if st.button("刪除"):
         response = delete_change_record(project_id, change_record["ID"])
-        if "detail" in response:  # API 返回空表示成功
+        if "message" in response:  # API 成功返回 {"message": "..."}
             st.toast("刪除成功", icon="✅")
+            st.cache_data.clear()
         else:
             # st.write(response)
             st.toast("刪除失敗", icon="❌")
