@@ -30,14 +30,21 @@ def delete_plan(plan_id):
 
 #工程
 
-def create_project(project_id,plan_id,project_name,approval_budget,current_status):
-    data={
+def create_project(project_id, plan_id, project_name, approval_budget, current_status, workstation=None, td_code=None):
+    data = {
         "ProjectID": project_id,
         "PlanID": plan_id,
         "ProjectName": project_name,
         "ApprovalBudget": approval_budget,
         "CurrentStatus": current_status
     }
+    
+    # 添加可選參數
+    if workstation:
+        data["Workstation"] = workstation
+    if td_code:
+        data["TD_CODE"] = td_code
+    
     response = requests.post(f"{BASE_URL}/projects/", json=data)
     return response.json()
 
@@ -193,3 +200,30 @@ def update_project_date_and_status(project_id, new_status, new_date):
             result2 = update_project(project_id, data2)
             # st.write(result2)
             print(result2)
+
+# 工程編號變更相關 API
+def create_project_id_change(project_id, data, file=None):
+    """創建工程編號變更記錄"""
+    if file:
+        files = {"file": file}
+        data = {k: v for k, v in data.items() if k != "PDFPath"}
+        response = requests.post(f"{BASE_URL}/projects/{project_id}/project-id-changes", data=data, files=files)
+    else:
+        data = {k: v for k, v in data.items() if k != "PDFPath"}
+        response = requests.post(f"{BASE_URL}/projects/{project_id}/project-id-changes", json=data)
+    return response.json()
+
+def get_project_id_changes(project_id):
+    """獲取指定專案的工程編號變更記錄"""
+    response = requests.get(f"{BASE_URL}/projects/{project_id}/project-id-changes")
+    return response.json()
+
+def get_all_project_id_changes():
+    """獲取所有工程編號變更記錄"""
+    response = requests.get(f"{BASE_URL}/projects/project-id-changes/all")
+    return response.json()
+
+def delete_project_id_change(project_id, change_id):
+    """刪除工程編號變更記錄"""
+    response = requests.delete(f"{BASE_URL}/projects/{project_id}/project-id-changes/{change_id}")
+    return response.json()
