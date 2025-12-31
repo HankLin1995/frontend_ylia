@@ -25,11 +25,19 @@ def upload_plan_document(plan_id, data, file):
     response = requests.post(f"{BASE_URL}/plans/{plan_id}/document", data=data, files={"file": file})
     return response.json()
 
-def approve_plan_projects(plan_id, approval_date=None):
-    """批量核定計畫下所有"提報"狀態的專案"""
+def approve_plan_projects(plan_id, approval_date=None, project_ids=None):
+    """批量核定計畫下的專案
+    
+    Args:
+        plan_id: 計畫ID
+        approval_date: 核定日期（可選）
+        project_ids: 要核定的專案ID列表（可選，若為空則核定所有「提報」狀態的專案）
+    """
     data = {}
     if approval_date:
         data["ApprovalDate"] = approval_date
+    if project_ids:
+        data["ProjectIDs"] = project_ids
     response = requests.patch(f"{BASE_URL}/plans/{plan_id}/projects/approve", json=data)
     return response.json()
 
@@ -38,15 +46,34 @@ def update_plan(plan_id, data, file=None):
     # 先上傳文件
     upload_response = upload_plan_document(plan_id, data, file)
     
-    # 如果有核定日期，則批量核定專案
-    if "ApprovalDate" in data and data["ApprovalDate"]:
-        approve_response = approve_plan_projects(plan_id, data["ApprovalDate"])
+    # 如果有核定日期或指定專案ID，則批量核定專案
+    if "ApprovalDate" in data or "ProjectIDs" in data:
+        approval_date = data.get("ApprovalDate")
+        project_ids = data.get("ProjectIDs")
+        approve_response = approve_plan_projects(plan_id, approval_date, project_ids)
         return {
             "upload": upload_response,
             "approve": approve_response
         }
     
     return upload_response
+
+def get_plan_documents(plan_id):
+    """獲取計畫的所有文件歷史記錄"""
+    response = requests.get(f"{BASE_URL}/plans/{plan_id}/documents")
+    return response.json()
+
+def get_plan_document_file(plan_id, document_id):
+    """獲取計畫文件的 PDF 檔案"""
+    response = requests.get(f"{BASE_URL}/plans/{plan_id}/documents/{document_id}/file")
+    if response.status_code == 200:
+        return response.content
+    return None
+
+def delete_plan_document(plan_id, document_id):
+    """刪除計畫文件並回滾相關專案狀態"""
+    response = requests.delete(f"{BASE_URL}/plans/{plan_id}/documents/{document_id}")
+    return response.json()
 
 def delete_plan(plan_id):
     response = requests.delete(f"{BASE_URL}/plans/{plan_id}")
@@ -79,6 +106,12 @@ def get_projects():
 def get_project(project_id):
     response = requests.get(f"{BASE_URL}/projects/{project_id}")
     return response.json()
+
+def get_projects_by_plan(plan_id):
+    """獲取指定計畫下的所有專案"""
+    response = requests.get(f"{BASE_URL}/projects/all")
+    all_projects = response.json()
+    return [p for p in all_projects if p.get("PlanID") == plan_id]
 
 def update_project(project_id,data):
     response = requests.patch(f"{BASE_URL}/projects/{project_id}", json=data)

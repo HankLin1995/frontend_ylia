@@ -7,3 +7,4 @@ streamlit-vis-timeline
 ldap3
 plotly
 seaborn
+streamlit[pdf]

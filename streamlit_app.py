@@ -2,7 +2,7 @@ import streamlit as st
 from auth import check_ad_credentials, get_user_info_one, parse_dn, white_list
 import time
 
-VERSION="1.6.1"
+VERSION="1.7.0"
 
 st.set_page_config(page_title=f"工程管理系統-V{VERSION}",layout="wide")
 st.logo("LOGO.PNG")
@@ -16,6 +16,7 @@ plan_detail_page = st.Page("view_plan.py", title="計畫明細", icon=":material
 
 project_detail_page = st.Page("view_project.py", title="工程內容", icon=":material/architecture:")
 project_changes_page = st.Page("view_changes.py", title="計畫修正", icon=":material/edit:")
+plan_documents_page = st.Page("view_plan_documents.py", title="核定計畫版本", icon=":material/files:")
 
 dashboard_page = st.Page("view_dashboard.py", title="工程分析", icon=":material/insights:", default=True)
 import_page = st.Page("view_import.py", title="EXCEL匯入", icon=":material/upload_file:")
@@ -74,7 +75,7 @@ else:
         pg=st.navigation(
             {
                 "設定":[workstation_page],
-                "計畫":[plan_page,plan_detail_page,project_changes_page],
+                "計畫":[plan_page,plan_detail_page,plan_documents_page,project_changes_page],
                 "工程":[project_detail_page],
                 "水路":[view_channels_page],
                 "分析":[dashboard_page],

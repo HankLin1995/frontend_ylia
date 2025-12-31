@@ -3,7 +3,8 @@ import pandas as pd
 from api import (
    create_plan,
    update_plan,
-   delete_plan
+   delete_plan,
+   get_projects_by_plan
 )
 import time
 from convert import get_plans_df
@@ -35,7 +36,7 @@ def add_plan_ui():
         st.cache_data.clear()
         st.rerun()
 
-@st.dialog("📤上傳附件")
+@st.dialog("📤上傳附件", width="large")
 def update_plan_ui():
 
     plan_id=st.selectbox("計畫編號",get_plans_df()["計畫編號"])
@@ -47,14 +48,54 @@ def update_plan_ui():
     
     st.divider()
     st.caption("📋 批量核定專案（選填）")
-    approval_date = st.date_input("核定日期", value=None, help="若填寫，將自動把該計畫下所有「提報」狀態的專案改為「核定」")
+    
+    # 獲取該計畫下所有「提報」狀態的專案
+    plan_projects = get_projects_by_plan(plan_id)
+    pending_projects = [p for p in plan_projects if p.get("CurrentStatus") == "提報"]
+    
+    if pending_projects:
+        st.info(f"📌 該計畫下有 {len(pending_projects)} 個「提報」狀態的專案")
+        
+        # 選擇核定模式
+        approve_mode = st.radio(
+            "核定模式",
+            ["不核定專案", "選擇性核定", "全部核定"],
+            help="選擇要核定的專案範圍"
+        )
+        
+        selected_project_ids = []
+        approval_date = None
+        
+        if approve_mode == "選擇性核定":
+            # 顯示專案列表供選擇
+            st.write("**選擇要核定的專案：**")
+            for project in pending_projects:
+                if st.checkbox(
+                    f"{project['ProjectID']} - {project['ProjectName']}", 
+                    key=f"project_{project['ProjectID']}"
+                ):
+                    selected_project_ids.append(project['ProjectID'])
+            
+            if selected_project_ids:
+                approval_date = st.date_input("核定日期", value=None)
+        
+        elif approve_mode == "全部核定":
+            approval_date = st.date_input("核定日期", value=None)
+            st.warning(f"⚠️ 將核定所有 {len(pending_projects)} 個「提報」狀態的專案")
+    else:
+        st.info("📌 該計畫下沒有「提報」狀態的專案")
+        approve_mode = "不核定專案"
 
     data={
         "ApprovalDoc": approval_doc,
     }
     
-    if approval_date:
-        data["ApprovalDate"] = approval_date.isoformat()
+    # 根據選擇的模式設定資料
+    if approve_mode == "選擇性核定" and selected_project_ids:
+        data["ApprovalDate"] = approval_date.isoformat() if approval_date else None
+        data["ProjectIDs"] = selected_project_ids
+    elif approve_mode == "全部核定":
+        data["ApprovalDate"] = approval_date.isoformat() if approval_date else None
 
     if st.button("更新"):
         if not file:
@@ -107,7 +148,7 @@ st.dataframe(df,hide_index=True)
 #     # st.subheader(f"{year}年計畫清單")
 #     st.dataframe(group,hide_index=True)
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3= st.columns(3)
 
 with col1:
     if st.button("📝新增計畫",use_container_width=True):
@@ -116,7 +157,6 @@ with col1:
 with col2:
     if st.button("📤上傳附件",use_container_width=True):
         update_plan_ui()
-
 with col3:
     if st.button("🗑️ 刪除計畫",use_container_width=True,disabled=True):
         delete_plan_ui()
