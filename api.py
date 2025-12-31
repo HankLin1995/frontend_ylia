@@ -20,9 +20,33 @@ def create_plan(data,file=None):
     response = requests.post(f"{BASE_URL}/plans/", data=data, files={"file": file})
     return response.json()
 
-def update_plan(plan_id,data,file=None):
+def upload_plan_document(plan_id, data, file):
+    """上傳計畫PDF文件"""
     response = requests.post(f"{BASE_URL}/plans/{plan_id}/document", data=data, files={"file": file})
     return response.json()
+
+def approve_plan_projects(plan_id, approval_date=None):
+    """批量核定計畫下所有"提報"狀態的專案"""
+    data = {}
+    if approval_date:
+        data["ApprovalDate"] = approval_date
+    response = requests.patch(f"{BASE_URL}/plans/{plan_id}/projects/approve", json=data)
+    return response.json()
+
+def update_plan(plan_id, data, file=None):
+    """上傳計畫文件並核定相關專案（組合操作）"""
+    # 先上傳文件
+    upload_response = upload_plan_document(plan_id, data, file)
+    
+    # 如果有核定日期，則批量核定專案
+    if "ApprovalDate" in data and data["ApprovalDate"]:
+        approve_response = approve_plan_projects(plan_id, data["ApprovalDate"])
+        return {
+            "upload": upload_response,
+            "approve": approve_response
+        }
+    
+    return upload_response
 
 def delete_plan(plan_id):
     response = requests.delete(f"{BASE_URL}/plans/{plan_id}")

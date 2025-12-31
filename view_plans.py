@@ -44,21 +44,44 @@ def update_plan_ui():
 
     approval_doc=st.text_input("核定文號",row["核定文號"])
     file=st.file_uploader("附件", type=["pdf"])
+    
+    st.divider()
+    st.caption("📋 批量核定專案（選填）")
+    approval_date = st.date_input("核定日期", value=None, help="若填寫，將自動把該計畫下所有「提報」狀態的專案改為「核定」")
 
     data={
         "ApprovalDoc": approval_doc,
     }
+    
+    if approval_date:
+        data["ApprovalDate"] = approval_date.isoformat()
 
     if st.button("更新"):
-        response = update_plan(plan_id,data,file)
+        if not file:
+            st.error("請上傳PDF文件")
+            return
+            
+        response = update_plan(plan_id, data, file)
 
         st.write(response)
 
-        if response["PlanID"]:
-            st.toast("更新成功",icon="✅")
-            st.cache_data.clear()
-        else:
-            st.toast("更新失敗",icon="❌")
+        # 檢查回應格式（可能是單一回應或組合回應）
+        if isinstance(response, dict):
+            if "upload" in response:
+                # 組合操作的回應
+                if response["upload"].get("PlanID"):
+                    st.success(f"✅ 文件上傳成功")
+                    if "approve" in response:
+                        st.success(f"✅ 已核定 {response['approve']['updated_count']} 個專案")
+                    st.cache_data.clear()
+                else:
+                    st.error("❌ 更新失敗")
+            elif response.get("PlanID"):
+                # 單一上傳操作的回應
+                st.success("✅ 文件上傳成功")
+                st.cache_data.clear()
+            else:
+                st.error("❌ 更新失敗")
 
         time.sleep(1)
         st.rerun()
