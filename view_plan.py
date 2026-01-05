@@ -111,6 +111,8 @@ def create_project_ui(plan_id):
     else:
         current_status = "提報"
 
+    current_status = st.selectbox("狀態", ["提報", "核定"], index=["提報", "核定"].index(current_status), help="請選擇「提報」或「核定」")
+
     if st.button("新增"):
         response = create_project(project_id, plan_id, project_name, approval_budget, current_status)
         st.write(response)
@@ -154,7 +156,30 @@ def create_project_ui(plan_id):
 
 st.subheader("📅計畫明細")
 
-plan_id=st.selectbox("計畫編號",get_plans_df()["計畫編號"])
+# 年度篩選
+plans_df = get_plans_df()
+available_years = sorted(plans_df["年度"].unique(), reverse=True)
+
+col1, col2 = st.columns([1, 3])
+
+with col1:
+    selected_year = st.selectbox("選擇年度", available_years)
+
+with col2:
+    # 根據選擇的年度篩選計畫
+    filtered_plans = plans_df[plans_df["年度"] == selected_year]
+    plan_options = filtered_plans["計畫編號"].tolist()
+    
+    if plan_options:
+        plan_id = st.selectbox(
+            "計畫編號", 
+            plan_options,
+            format_func=lambda x: f"{x} - {filtered_plans[filtered_plans['計畫編號']==x]['計畫名稱'].values[0]}"
+        )
+    else:
+        st.warning(f"⚠️ {selected_year} 年度沒有計畫")
+        st.stop()
+
 plan=get_plan(plan_id)
 
 st.info(f" **計畫名稱:** {plan['PlanName']}")

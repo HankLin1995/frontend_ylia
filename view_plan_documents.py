@@ -60,9 +60,23 @@ def view_pdf_dialog(plan_id, document):
         else:
             st.error("❌ 無法載入 PDF 文件")
 
-# 選擇計畫ID
+# 選擇計畫ID - 只顯示有文件版本的計畫
 plans = get_plans()
-plan_options = {plan["PlanID"]: f"{plan['PlanID']} - {plan['PlanName']}" for plan in plans}
+# 篩選出有文件的計畫
+plans_with_documents = []
+for plan in plans:
+    try:
+        documents = get_plan_documents(plan["PlanID"])
+        if documents and len(documents) > 0:
+            plans_with_documents.append(plan)
+    except:
+        continue
+
+if not plans_with_documents:
+    st.warning("⚠️ 目前沒有任何計畫上傳過文件版本")
+    st.stop()
+
+plan_options = {plan["PlanID"]: f"{plan['PlanID']} - {plan['PlanName']}" for plan in plans_with_documents}
 selected_plan = st.selectbox("選擇所屬計畫", options=list(plan_options.keys()), format_func=lambda x: plan_options[x])
 
 if selected_plan:
