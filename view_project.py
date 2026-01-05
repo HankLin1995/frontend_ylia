@@ -10,6 +10,10 @@ from api import (
     get_project_dates,
     get_project_changes,
     get_project_channels,
+    get_project_attachments,
+    upload_project_attachment,
+    download_project_attachment,
+    delete_project_attachment,
 )
 from convert import get_projects_df,get_workstations_df,get_plans_df,get_status_emoji,get_channels_df
 
@@ -311,7 +315,7 @@ if selected_project_id:
 
 st.subheader(get_status_emoji(project["CurrentStatus"]) + f"{project['ProjectName']} ({project['ProjectID']})") 
 
-tab1,tab2=st.tabs(["查看資料","內容編輯",])
+tab1,tab2,tab3=st.tabs(["查看資料","內容編輯","附件管理"])
 
 with tab1:
 
@@ -358,6 +362,136 @@ with tab2:
 
     # with st.container(border=True):
     #     update_approval_content(project["ProjectID"])
+
+with tab3:
+    st.markdown("##### 📎 工程附件管理")
+    
+    # 上傳新附件
+    # with st.expander("➕ 上傳新附件", expanded=False):
+    upload_file = st.file_uploader(
+        "選擇檔案",
+        type=["pdf", "docx", "xlsx", "jpg", "png", "zip", "dwg"],
+        help="支援格式：PDF, Word, Excel, 圖片, ZIP, DWG"
+    )
+    
+    file_description = st.text_input("檔案說明", placeholder="例如：設計圖、規範文件、預算書等")
+    
+    if st.button("上傳", type="primary"):
+        if upload_file:
+            try:
+                with st.spinner("上傳中..."):
+                    result = upload_project_attachment(
+                        project["ProjectID"],
+                        upload_file,
+                        file_description if file_description else None
+                    )
+                    
+                    if result:
+                        st.success(f"✅ 檔案「{upload_file.name}」上傳成功！")
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error("❌ 檔案上傳失敗")
+            except Exception as e:
+                st.error(f"❌ 上傳失敗：{str(e)}")
+        else:
+            st.warning("⚠️ 請先選擇要上傳的檔案")
+
+    st.divider()
+    
+    # 顯示已上傳的附件列表
+    try:
+        attachments = get_project_attachments(project["ProjectID"])
+        
+        if attachments and len(attachments) > 0:
+            st.markdown(f"**已上傳 {len(attachments)} 個附件**")
+            
+            # 使用 DataFrame 顯示附件列表
+            attachment_data = []
+            for att in attachments:
+                # 格式化檔案大小
+                file_size_mb = att['FileSize'] / (1024 * 1024)
+                if file_size_mb < 1:
+                    file_size_str = f"{att['FileSize'] / 1024:.1f} KB"
+                else:
+                    file_size_str = f"{file_size_mb:.2f} MB"
+                
+                # 格式化上傳時間
+                upload_time = att['UploadTime'][:19] if att.get('UploadTime') else ''
+                
+                attachment_data.append({
+                    "檔案名稱": att['FileName'],
+                    "說明": att.get('Description', '（無）'),
+                    "檔案大小": file_size_str,
+                    "上傳時間": upload_time,
+                    "ID": att['ID']
+                })
+            
+            df_attachments = pd.DataFrame(attachment_data)
+            
+            # 顯示附件列表
+            for idx, att in enumerate(attachments):
+                with st.container(border=True):
+                    col1, col2, col3 = st.columns([3, 1, 1])
+                    
+                    with col1:
+                        st.markdown(f"**📄 {att['FileName']}**")
+                        if att.get('Description'):
+                            st.caption(att['Description'])
+                        
+                        # 顯示檔案資訊
+                        file_size_mb = att['FileSize'] / (1024 * 1024)
+                        if file_size_mb < 1:
+                            file_size_str = f"{att['FileSize'] / 1024:.1f} KB"
+                        else:
+                            file_size_str = f"{file_size_mb:.2f} MB"
+                        
+                        st.caption(f"🕒 {att['UploadTime'][:19]} | 📦 {file_size_str}")
+                    
+                    with col2:
+                        # 下載按鈕
+                        if st.button("📥 下載", key=f"download_{att['ID']}", use_container_width=True):
+                            try:
+                                file_content = download_project_attachment(project["ProjectID"], att['ID'])
+                                if file_content:
+                                    st.download_button(
+                                        label="💾 儲存檔案",
+                                        data=file_content,
+                                        file_name=att['FileName'],
+                                        mime=att['FileType'],
+                                        key=f"save_{att['ID']}",
+                                        use_container_width=True
+                                    )
+                                else:
+                                    st.error("❌ 下載失敗")
+                            except Exception as e:
+                                st.error(f"❌ 下載失敗：{str(e)}")
+                    
+                    with col3:
+                        # 刪除按鈕（需要編輯權限）
+                        if btn_access:
+                            if st.button("🗑️ 刪除", key=f"delete_{att['ID']}", type="secondary", use_container_width=True):
+                                if st.session_state.get(f"confirm_delete_{att['ID']}") != att['ID']:
+                                    st.session_state[f"confirm_delete_{att['ID']}"] = att['ID']
+                                    st.warning("⚠️ 請再次點擊確認刪除")
+                                else:
+                                    try:
+                                        with st.spinner("刪除中..."):
+                                            result = delete_project_attachment(project["ProjectID"], att['ID'])
+                                            if result:
+                                                st.success("✅ 附件已刪除")
+                                                st.session_state.pop(f"confirm_delete_{att['ID']}", None)
+                                                time.sleep(1)
+                                                st.rerun()
+                                            else:
+                                                st.error("❌ 刪除失敗")
+                                    except Exception as e:
+                                        st.error(f"❌ 刪除失敗：{str(e)}")
+        else:
+            st.info("📭 目前沒有上傳任何附件")
+            
+    except Exception as e:
+        st.error(f"❌ 載入附件列表時發生錯誤：{str(e)}")
 
 
 

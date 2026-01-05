@@ -2,7 +2,7 @@ import streamlit as st
 from auth import check_ad_credentials, get_user_info_one, parse_dn, white_list
 import time
 
-VERSION="1.7.1"
+VERSION="1.7.2"
 
 st.set_page_config(page_title=f"工程管理系統-V{VERSION}",layout="wide")
 st.logo("LOGO.PNG")

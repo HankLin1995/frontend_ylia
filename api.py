@@ -284,3 +284,30 @@ def delete_project_id_change(project_id, change_id):
     """刪除工程編號變更記錄"""
     response = requests.delete(f"{BASE_URL}/projects/{project_id}/project-id-changes/{change_id}")
     return response.json()
+
+# 工程附件相關 API
+def upload_project_attachment(project_id, file, description=None):
+    """上傳工程附件"""
+    files = {"file": file}
+    data = {}
+    if description:
+        data["Description"] = description
+    response = requests.post(f"{BASE_URL}/projects/{project_id}/attachments", data=data, files=files)
+    return response.json()
+
+def get_project_attachments(project_id):
+    """獲取工程的所有附件"""
+    response = requests.get(f"{BASE_URL}/projects/{project_id}/attachments")
+    return response.json()
+
+def download_project_attachment(project_id, attachment_id):
+    """下載工程附件"""
+    response = requests.get(f"{BASE_URL}/projects/{project_id}/attachments/{attachment_id}")
+    if response.status_code == 200:
+        return response.content
+    return None
+
+def delete_project_attachment(project_id, attachment_id):
+    """刪除工程附件"""
+    response = requests.delete(f"{BASE_URL}/projects/{project_id}/attachments/{attachment_id}")
+    return response.json()
