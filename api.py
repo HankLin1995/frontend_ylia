@@ -311,3 +311,58 @@ def delete_project_attachment(project_id, attachment_id):
     """刪除工程附件"""
     response = requests.delete(f"{BASE_URL}/projects/{project_id}/attachments/{attachment_id}")
     return response.json()
+
+# 工程文件記錄相關 API
+def create_project_document(project_id, data, file=None):
+    """創建工程文件記錄"""
+    files = {"file": file} if file else None
+    response = requests.post(f"{BASE_URL}/projects/{project_id}/documents", data=data, files=files)
+    return response.json()
+
+def get_project_documents(project_id):
+    """獲取工程的所有文件記錄"""
+    response = requests.get(f"{BASE_URL}/projects/{project_id}/documents")
+    return response.json()
+
+def get_all_project_documents():
+    """獲取所有工程文件記錄"""
+    try:
+        response = requests.get(f"{BASE_URL}/projects/documents/all")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return []
+    except Exception as e:
+        print(f"Error fetching documents: {e}")
+        return []
+
+def update_project_document(project_id, document_id, data, file=None):
+    """更新工程文件記錄"""
+    files = {"file": file} if file else None
+    response = requests.patch(f"{BASE_URL}/projects/{project_id}/documents/{document_id}", data=data, files=files)
+    return response.json()
+
+def delete_project_document(project_id, document_id):
+    """刪除工程文件記錄"""
+    response = requests.delete(f"{BASE_URL}/projects/{project_id}/documents/{document_id}")
+    return response.json()
+
+def get_project_document_file(project_id, document_id):
+    """獲取工程文件 PDF 檔案"""
+    try:
+        url = f"{BASE_URL}/projects/{project_id}/documents/{document_id}/file"
+        print(f"Fetching PDF from: {url}")
+        response = requests.get(url)
+        print(f"Response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            print(f"PDF content length: {len(response.content)} bytes")
+            return response.content
+        else:
+            print(f"Error response: {response.text}")
+            return None
+    except Exception as e:
+        print(f"Error fetching document file: {e}")
+        import traceback
+        traceback.print_exc()
+        return None

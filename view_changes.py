@@ -17,6 +17,11 @@ from api import (
     create_project_dates,
     get_project_dates,
     update_project,
+    create_project_document,
+    get_all_project_documents,
+    update_project_document,
+    delete_project_document,
+    get_project_document_file,
 )
 
 from convert import get_projects_df,get_changes_df
@@ -65,7 +70,7 @@ def add_change_records():
     edited_df = st.data_editor(
         df,
         hide_index=True,
-        use_container_width=True,
+        width='stretch',
         key="change_editor"
     )
 
@@ -255,7 +260,7 @@ df = get_changes_df()
 df_projects = get_projects_df()
 df = pd.merge(df, df_projects, on='工程編號')
 
-tab1, tab2 = st.tabs(["💰修正預算總表", "🔄工程編號變更"])
+tab1, tab2, tab3 = st.tabs(["💰修正預算總表", "🔄工程編號變更", "📄文件記錄"])
 
 with tab1:
 
@@ -267,22 +272,22 @@ with tab1:
             '新金額': format_currency,
             '變更日期': lambda x: pd.to_datetime(x).strftime('%Y-%m-%d')
         }),
-        use_container_width=True,
+        width='stretch',
         hide_index=True
     )
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        if st.button("📝新增變更紀錄",use_container_width=True):
+        if st.button("📝新增變更紀錄", width='stretch'):
             add_change_record_ui()
 
     with col2:
-        if st.button("✏️編輯變更紀錄",use_container_width=True):
+        if st.button("✏️編輯變更紀錄", width='stretch'):
             update_change_record_ui()
 
     with col3:
-        if st.button("🗑️刪除變更紀錄",use_container_width=True):
+        if st.button("🗑️刪除變更紀錄", width='stretch'):
             delete_change_record_ui()
 
 # ===== 工程編號變更功能 =====
@@ -372,7 +377,7 @@ def project_id_change_ui():
     
     st.markdown("---")
     
-    if st.button("✅ 執行工程編號變更", type="primary", use_container_width=True):
+    if st.button("✅ 執行工程編號變更", type="primary", width='stretch'):
         # 驗證必填欄位
         if not all([new_project_id, new_plan_id, change_reason, change_date, change_doc]):
             st.error("請填寫所有必填欄位（標記 * 的欄位）")
@@ -517,7 +522,7 @@ def view_project_id_changes_ui():
         
         st.dataframe(
             df[["變更日期", "原工程編號", "新工程編號", "新計畫ID", "變更原因", "文號"]],
-            use_container_width=True,
+            width='stretch',
             hide_index=True
         )
         
@@ -574,7 +579,7 @@ def rollback_project_id_change_ui():
         
         st.markdown("---")
         
-        if st.button("⚠️ 確認回復變更", type="primary", use_container_width=True):
+        if st.button("⚠️ 確認回復變更", type="primary", width='stretch'):
             try:
                 with st.spinner("正在回復工程編號變更..."):
                     old_project_id = selected_change["OldProjectID"]
@@ -660,7 +665,7 @@ with tab2:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        if st.button("🔄 工程編號變更", use_container_width=True):
+        if st.button("🔄 工程編號變更", width='stretch'):
             project_id_change_ui()
 
     # with col2:
@@ -668,5 +673,306 @@ with tab2:
     #         view_project_id_changes_ui()
 
     with col2:
-        if st.button("♻️ 回復變更", use_container_width=True):
+        if st.button("♻️ 回復變更", width='stretch'):
             rollback_project_id_change_ui()
+
+# ===== 文件記錄功能 =====
+
+@st.dialog("📄 查看 PDF 文件", width="large")
+def view_document_pdf_dialog(document):
+    """查看文件 PDF 對話框"""
+    # col1, col2 = st.columns([3, 1])
+    
+    # with col1:
+    #     st.write(f"**文件標題：** {document.get('DocumentTitle', '')}")
+    #     st.write(f"**文件類型：** {document.get('DocumentType', '')}")
+    st.write(f"**文件日期：** {document.get('DocumentDate', '')}")
+    st.write(f"**文號：** {document.get('DocumentNumber', '無')}")
+    
+    # with col2:
+    #     st.write(f"**工程編號：** {document.get('ProjectID', '')}")
+    #     st.write(f"**建立時間：** {document.get('CreateTime', '')[:19] if document.get('CreateTime') else ''}")
+    
+    # if document.get('Description'):
+    #     st.write(f"**說明：** {document.get('Description', '')}")
+    
+    st.divider()
+    
+    # 獲取並顯示 PDF
+    if document.get('PDFPath'):
+        with st.spinner("載入 PDF 文件中..."):
+            try:
+                pdf_content = get_project_document_file(
+                    document['ProjectID'], 
+                    document['ID']
+                )
+                
+                if pdf_content:
+                    st.pdf(pdf_content, height=800)
+                else:
+                    st.error("❌ 無法載入 PDF 文件")
+                    st.write(f"Debug: ProjectID={document['ProjectID']}, DocumentID={document['ID']}")
+            except Exception as e:
+                st.error(f"❌ 載入 PDF 時發生錯誤: {str(e)}")
+                st.write(f"Debug: ProjectID={document['ProjectID']}, DocumentID={document['ID']}")
+    else:
+        st.info("📝 此文件沒有上傳 PDF 附件")
+
+@st.dialog("📄 新增文件記錄")
+def add_document_record_ui():
+    """新增文件記錄 UI"""
+    projects_df = get_projects_df()
+    project_name = st.selectbox("選擇工程", projects_df["工程名稱"].tolist())
+    
+    if not project_name:
+        st.error("請選擇工程")
+        return
+    
+    project_id = projects_df[projects_df["工程名稱"] == project_name]["工程編號"].values[0]
+    
+    st.markdown("---")
+    
+    document_title = st.text_input("文件標題 *", help="請輸入文件標題")
+    # document_type = st.selectbox(
+    #     "文件類型",
+    #     ["公文", "會議紀錄", "報告", "計畫書", "其他"],
+    #     index=None
+    # )
+    document_date = st.date_input("文件日期", value=datetime.now())
+    document_number = st.text_input("文號", help="文件編號或文號")
+    # description = st.text_area("說明", help="文件說明或備註")
+    file = st.file_uploader("附件（PDF）", type=["pdf"])
+    
+    if st.button("✅ 新增", width='stretch'):
+        if not document_title:
+            st.error("請填寫文件標題")
+            return
+        
+        try:
+            data = {
+                "document_title": document_title,
+                "document_type": "公文",
+                "document_date": document_date.strftime("%Y-%m-%d"),
+                "document_number": document_number if document_number else "",
+                "description": ""
+            }
+            
+            response = create_project_document(project_id, data, file)
+            
+            if response and "ID" in response:
+                st.toast("新增成功", icon="✅")
+                st.cache_data.clear()
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error(f"新增失敗: {response}")
+        except Exception as e:
+            st.error(f"發生錯誤: {str(e)}")
+
+@st.dialog("✏️ 編輯文件記錄")
+def edit_document_record_ui(selected_doc):
+    """編輯文件記錄 UI"""
+    try:
+        # st.markdown(f"### 編輯文件：{selected_doc['DocumentTitle']}")
+        st.subheader(f"工程編號：{selected_doc['ProjectID']}")
+        
+        # st.markdown("---")
+        
+        document_title = st.text_input("文件標題 *", value=selected_doc["DocumentTitle"])
+        # document_type = st.selectbox(
+        #     "文件類型",
+        #     ["公文", "會議紀錄", "報告", "計畫書", "其他"],
+        #     index=["公文", "會議紀錄", "報告", "計畫書", "其他"].index(selected_doc["DocumentType"]) 
+        #         if selected_doc.get("DocumentType") in ["公文", "會議紀錄", "報告", "計畫書", "其他"] 
+        #         else 0
+        # )
+        
+        doc_date = selected_doc.get("DocumentDate")
+        if doc_date:
+            try:
+                doc_date = datetime.strptime(doc_date, "%Y-%m-%d").date()
+            except:
+                doc_date = datetime.now().date()
+        else:
+            doc_date = datetime.now().date()
+        
+        document_date = st.date_input("文件日期", value=doc_date)
+        document_number = st.text_input("文號", value=selected_doc.get("DocumentNumber", ""))
+        # description = st.text_area("說明", value=selected_doc.get("Description", ""))
+        file = st.file_uploader("附件（PDF）", type=["pdf"], help="上傳新檔案將替換舊檔案")
+        
+        if st.button("✅ 更新", type="primary", width='stretch'):
+            if not document_title:
+                st.error("請填寫文件標題")
+                return
+            
+            try:
+                data = {
+                    "document_title": document_title,
+                    "document_type": "",
+                    "document_date": document_date.strftime("%Y-%m-%d"),
+                    "document_number": document_number,
+                    "description": ""
+                }
+                
+                response = update_project_document(
+                    selected_doc["ProjectID"], 
+                    selected_doc["ID"], 
+                    data, 
+                    file
+                )
+                
+                if response and "ID" in response:
+                    st.toast("更新成功", icon="✅")
+                    st.cache_data.clear()
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error(f"更新失敗: {response}")
+            except Exception as e:
+                st.error(f"發生錯誤: {str(e)}")
+                
+    except Exception as e:
+        st.error(f"獲取文件記錄失敗: {str(e)}")
+
+@st.dialog("🗑️ 刪除文件記錄")
+def delete_document_record_ui(selected_doc):
+    """刪除文件記錄 UI"""
+    try:
+        # st.markdown(f"### 刪除文件：{selected_doc['DocumentTitle']}")
+        # st.caption(f"工程編號：{selected_doc['ProjectID']}")
+        
+        # st.markdown("---")
+        # st.markdown("### 文件資訊")
+        # col1, col2 = st.columns(2)
+        # with col1:
+        #     st.text_input("工程編號", value=selected_doc["ProjectID"], disabled=True)
+        #     st.text_input("文件標題", value=selected_doc["DocumentTitle"], disabled=True)
+        # with col2:
+        #     st.text_input("文件類型", value=selected_doc.get("DocumentType", ""), disabled=True)
+        #     st.text_input("文件日期", value=selected_doc.get("DocumentDate", ""), disabled=True)
+        
+        st.write("⚠️ 刪除後將無法恢復，確定要刪除嗎？")
+        
+        if st.button("🗑️ 確認刪除", type="secondary", width='stretch'):
+            try:
+                response = delete_project_document(
+                    selected_doc["ProjectID"], 
+                    selected_doc["ID"]
+                )
+                
+                if "message" in response:
+                    st.toast("刪除成功", icon="✅")
+                    st.cache_data.clear()
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error(f"刪除失敗: {response}")
+            except Exception as e:
+                st.error(f"發生錯誤: {str(e)}")
+                
+    except Exception as e:
+        st.error(f"獲取文件記錄失敗: {str(e)}")
+
+with tab3:
+    # st.markdown("### 📄 文件記錄管理")
+    
+    try:
+
+        documents = get_all_project_documents()
+        
+        if documents:
+            # 準備表格資料
+            table_data = []
+            for doc in documents:
+                # 獲取工程名稱
+                project_name = df_projects[
+                    df_projects["工程編號"] == doc["ProjectID"]
+                ]["工程名稱"].values
+                project_name = project_name[0] if len(project_name) > 0 else doc["ProjectID"]
+                
+                # 格式化日期
+                doc_date = doc.get('DocumentDate', '')
+                if doc_date:
+                    try:
+                        doc_date = pd.to_datetime(doc_date).strftime('%Y-%m-%d')
+                    except:
+                        pass
+                
+                table_data.append({
+                    "工程編號": doc.get('ProjectID', ''),
+                    "工程名稱": project_name,
+                    "文件標題": doc.get('DocumentTitle', ''),
+                    "來文日期": doc_date,
+                    "文號": doc.get('DocumentNumber', ''),
+                    "_doc_id": doc['ID'],
+                    "_has_pdf_bool": doc.get("PDFPath") is not None,
+                    "_full_doc": doc
+                })
+            
+            df_docs = pd.DataFrame(table_data)
+            
+            # 使用 st.dataframe 的 on_select 參數實現行選擇
+            event = st.dataframe(
+                df_docs[["工程編號", "工程名稱", "文件標題", "來文日期", "文號"]],
+                width='stretch',
+                hide_index=True,
+                on_select="rerun",
+                selection_mode="single-row",
+                key="doc_selection"
+            )
+            
+            # 獲取選中的行
+            selected_rows = event.selection.rows if event.selection else []
+            
+            # 查看 PDF 按鈕
+            if selected_rows:
+                # 獲取選中行中有 PDF 的文件
+                selected_docs_with_pdf = []
+                for row_idx in selected_rows:
+                    if row_idx < len(df_docs) and df_docs.iloc[row_idx]['_has_pdf_bool']:
+                        selected_docs_with_pdf.append(df_docs.iloc[row_idx]['_full_doc'])
+        else:
+            st.info("目前沒有文件記錄")
+    except Exception as e:
+        st.error(f"載入文件記錄失敗: {str(e)}")
+    
+    st.divider()
+    
+    # 操作按鈕
+    col1, col2, col3,col4 = st.columns(4)
+    
+    with col1:
+        if st.button(" :star: 新增文件記錄", width='stretch'):
+            add_document_record_ui()
+    
+    with col2:
+        if st.button("📄 查看PDF", width='stretch'):
+            try:
+                view_document_pdf_dialog(selected_docs_with_pdf[0])
+            except:
+                st.toast("⚠️ 沒有選擇文件")
+
+    try:
+
+        with col3:
+            # 編輯按鈕 - 需要選中一個文件
+            if selected_rows and len(selected_rows) == 1:
+                selected_doc = df_docs.iloc[selected_rows[0]]['_full_doc']
+                if st.button("✏️ 編輯文件記錄", width='stretch'):
+                    edit_document_record_ui(selected_doc)
+            else:
+                st.button("✏️ 編輯文件記錄", width='stretch', disabled=True)
+        
+        with col4:
+            # 刪除按鈕 - 需要選中一個文件
+            if selected_rows and len(selected_rows) == 1:
+                selected_doc = df_docs.iloc[selected_rows[0]]['_full_doc']
+                if st.button("🗑️ 刪除文件記錄", width='stretch'):
+                    delete_document_record_ui(selected_doc)
+            else:
+                st.button("🗑️ 刪除文件記錄", width='stretch', disabled=True)
+
+    except Exception as e:
+        # st.error(f"載入文件記錄失敗: {str(e)}")
+        pass
