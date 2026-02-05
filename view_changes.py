@@ -32,17 +32,60 @@ if not st.session_state.get("change_date"):
 if not st.session_state.get("change_doc"):
     st.session_state.change_doc = ""
 
+@st.dialog("批次變更紀錄", width="large")
 def add_change_records():
+    
+    st.info("💡 選擇多個專案，文件只需上傳一次，系統會為每個專案創建變更紀錄")
     
     #核定日期
     approval_date = st.date_input("核定日期", value=datetime.now())
     #文號
     doc_number = st.text_input("文號")
     #附件
-    file = st.file_uploader("附件", type=["pdf"])
+    file = st.file_uploader("附件", type=["pdf"], help="此文件將套用到所有選中的專案")
 
+    st.markdown("---")
+    st.markdown("### 選擇專案")
+    
+    # 添加計畫選擇器
+    plans = get_plans()
+    plan_options = ["不選擇（手動選專案）"] + [f"{p['PlanID']} - {p['PlanName']}" for p in plans]
+    
+    selected_plan_option = st.selectbox(
+        "📋 快速選擇：按計畫載入所有工程",
+        options=plan_options,
+        help="選擇計畫後，會自動載入該計畫下的所有工程項目"
+    )
+    
     projects_df = get_projects_df()
-    project_names = st.multiselect("專案名稱", projects_df["工程名稱"].tolist())
+    
+    # 根據選擇的計畫篩選專案
+    if selected_plan_option != "不選擇（手動選專案）":
+        # 提取計畫ID
+        selected_plan_id = selected_plan_option.split(" - ")[0]
+        # 篩選該計畫下的專案
+        filtered_projects = projects_df[projects_df["計畫編號"] == selected_plan_id]
+        available_project_names = filtered_projects["工程名稱"].tolist()
+        
+        if available_project_names:
+            st.success(f"✅ 已載入計畫「{selected_plan_option}」下的 {len(available_project_names)} 個工程")
+            # 預設全選該計畫下的所有專案
+            project_names = st.multiselect(
+                "專案名稱（可調整）",
+                available_project_names,
+                default=available_project_names,
+                help="已自動選擇該計畫下的所有工程，您可以取消勾選不需要的項目"
+            )
+        else:
+            st.warning(f"⚠️ 計畫「{selected_plan_option}」下沒有工程項目")
+            project_names = []
+    else:
+        # 手動選擇專案
+        project_names = st.multiselect(
+            "專案名稱",
+            projects_df["工程名稱"].tolist(),
+            help="手動選擇要新增變更紀錄的專案"
+        )
 
     if not project_names:
         st.info("請選擇一個或多個專案")
@@ -74,34 +117,71 @@ def add_change_records():
         key="change_editor"
     )
 
-    if st.button("新增"):
-
-        for index, row in edited_df.iterrows():
-            project_id = row["工程編號"]
-            old_amount = row["原金額"]
-            new_amount = row["新金額"]
-            change_reason = row["異動原因"]
-            
-            data = {
-                "ProjectID": project_id,
-                "OldAmount": old_amount,
-                "NewAmount": new_amount,
-                "ChangeReason": change_reason,
-                "ChangeDate": approval_date.strftime("%Y-%m-%d"),
-                "ChangeDoc": doc_number,
-                "PDFPath": None
-            }
-            
-            try:
-                response = create_change_record(project_id, data)
-                if response and "ID" in response:  # 檢查是否成功創建並返回了記錄 ID
-                    st.toast("新增成功", icon="✅")
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.error(f"新增失敗: {response}")
-            except Exception as e:
-                st.error(f"發生錯誤: {str(e)}")
+    if st.button("批次新增", type="primary"):
+        success_count = 0
+        fail_count = 0
+        skip_count = 0
+        
+        with st.spinner(f"正在為 {len(edited_df)} 個專案創建變更紀錄..."):
+            for index, row in edited_df.iterrows():
+                project_id = row["工程編號"]
+                project_name = row["工程名稱"]
+                old_amount = row["原金額"]
+                new_amount = row["新金額"]
+                change_reason = row["異動原因"]
+                
+                # 如果金額沒有改變，跳過此專案
+                if int(old_amount) == int(new_amount):
+                    skip_count += 1
+                    st.write(f"⏭️ {project_name} - 金額未改變，已跳過")
+                    continue
+                
+                # 確保 ChangeReason 不為空，若為空則使用預設值
+                if not change_reason or pd.isna(change_reason) or str(change_reason).strip() == "":
+                    change_reason = "如附件"
+                
+                data = {
+                    "ProjectID": project_id,
+                    "OldAmount": int(old_amount),
+                    "NewAmount": int(new_amount),
+                    "ChangeReason": str(change_reason),
+                    "ChangeDate": approval_date.strftime("%Y-%m-%d"),
+                    "ChangeDoc": doc_number,
+                    "PDFPath": None
+                }
+                
+                try:
+                    # 如果有上傳文件，重置文件指標以便重複使用
+                    if file:
+                        file.seek(0)
+                    
+                    response = create_change_record(project_id, data, file)
+                    
+                    if response and "ID" in response:
+                        success_count += 1
+                        st.write(f"✅ {project_name} - 新增成功")
+                        
+                        # 如果新金額為 0，更新專案狀態為撤案
+                        if new_amount == 0:
+                            update_project_date_and_status(project_id, "撤案", approval_date.strftime("%Y-%m-%d"))
+                    else:
+                        fail_count += 1
+                        st.write(f"❌ {project_name} - 新增失敗: {response}")
+                except Exception as e:
+                    fail_count += 1
+                    st.write(f"❌ {project_name} - 發生錯誤: {str(e)}")
+        
+        st.markdown("---")
+        if fail_count == 0 and skip_count == 0:
+            st.success(f"🎉 批次新增完成！成功創建 {success_count} 筆變更紀錄")
+        elif fail_count == 0:
+            st.success(f"🎉 批次新增完成！成功 {success_count} 筆，跳過 {skip_count} 筆（金額未改變）")
+        else:
+            st.warning(f"⚠️ 批次新增完成：成功 {success_count} 筆，失敗 {fail_count} 筆，跳過 {skip_count} 筆")
+        
+        st.cache_data.clear()
+        time.sleep(2)
+        st.rerun()
 
 def show_change_records():
     
@@ -168,23 +248,40 @@ def add_change_record_ui():
 
 @st.dialog("✏️編輯變更紀錄")
 def update_change_record_ui():
-    # 獲取專案列表
-    projects = get_changes_df()
-    project_ids = projects["工程編號"].tolist()
-    
-    project_id = st.selectbox("專案編號", project_ids)
-    
-    # 獲取該專案的變更紀錄
-    changes = get_project_changes(project_id)
-    if not changes:
-        st.warning("此專案尚無變更紀錄")
-        return
-    
-    change_docs = [f"{c['ChangeDate']} - {c['ChangeDoc']}" for c in changes]
-    selected_change = st.selectbox("選擇變更紀錄", change_docs)
-    
-    # 找到選中的變更紀錄
-    change_record = next(c for c in changes if f"{c['ChangeDate']} - {c['ChangeDoc']}" == selected_change)
+    # 檢查是否從勾選傳入
+    if 'selected_change_record' in st.session_state and st.session_state.selected_change_record:
+        project_id = st.session_state.selected_change_record['project_id']
+        change_id = st.session_state.selected_change_record['change_id']
+        
+        # 獲取該專案的變更紀錄
+        changes = get_project_changes(project_id)
+        if not changes:
+            st.warning("此專案尚無變更紀錄")
+            return
+        
+        # 找到選中的變更紀錄
+        change_record = next((c for c in changes if c['ID'] == change_id), None)
+        if not change_record:
+            st.error("找不到選中的變更紀錄")
+            return
+    else:
+        # 原有的手動選擇邏輯
+        projects = get_changes_df()
+        project_ids = projects["工程編號"].tolist()
+        
+        project_id = st.selectbox("專案編號", project_ids)
+        
+        # 獲取該專案的變更紀錄
+        changes = get_project_changes(project_id)
+        if not changes:
+            st.warning("此專案尚無變更紀錄")
+            return
+        
+        change_docs = [f"{c['ChangeDate']} - {c['ChangeDoc']}" for c in changes]
+        selected_change = st.selectbox("選擇變更紀錄", change_docs)
+        
+        # 找到選中的變更紀錄
+        change_record = next(c for c in changes if f"{c['ChangeDate']} - {c['ChangeDoc']}" == selected_change)
     
     old_amount = st.number_input("原金額", value=change_record["OldAmount"])
     new_amount = st.number_input("新金額", value=change_record["NewAmount"])
@@ -218,23 +315,45 @@ def update_change_record_ui():
 
 @st.dialog("🗑️刪除變更紀錄")
 def delete_change_record_ui():
-    # 獲取專案列表
-    df = get_changes_df()
-    project_ids = df["工程編號"].tolist()
-    
-    project_id = st.selectbox("專案編號", project_ids)
-    
-    # 獲取該專案的變更紀錄
-    changes = get_project_changes(project_id)
-    if not changes:
-        st.warning("此專案尚無變更紀錄")
-        return
-    
-    change_docs = [f"{c['ChangeDate']} - {c['ChangeDoc']}" for c in changes]
-    selected_change = st.selectbox("選擇變更紀錄", change_docs)
-    
-    # 找到選中的變更紀錄
-    change_record = next(c for c in changes if f"{c['ChangeDate']} - {c['ChangeDoc']}" == selected_change)
+    # 檢查是否從勾選傳入
+    if 'selected_change_record' in st.session_state and st.session_state.selected_change_record:
+        project_id = st.session_state.selected_change_record['project_id']
+        change_id = st.session_state.selected_change_record['change_id']
+        
+        # 獲取該專案的變更紀錄
+        changes = get_project_changes(project_id)
+        if not changes:
+            st.warning("此專案尚無變更紀錄")
+            return
+        
+        # 找到選中的變更紀錄
+        change_record = next((c for c in changes if c['ID'] == change_id), None)
+        if not change_record:
+            st.error("找不到選中的變更紀錄")
+            return
+        
+        # 顯示要刪除的記錄資訊
+        st.write(f"**工程編號：** {project_id}")
+        st.write(f"**變更日期：** {change_record['ChangeDate']}")
+        st.write(f"**文號：** {change_record['ChangeDoc']}")
+    else:
+        # 原有的手動選擇邏輯
+        df = get_changes_df()
+        project_ids = df["工程編號"].tolist()
+        
+        project_id = st.selectbox("專案編號", project_ids)
+        
+        # 獲取該專案的變更紀錄
+        changes = get_project_changes(project_id)
+        if not changes:
+            st.warning("此專案尚無變更紀錄")
+            return
+        
+        change_docs = [f"{c['ChangeDate']} - {c['ChangeDoc']}" for c in changes]
+        selected_change = st.selectbox("選擇變更紀錄", change_docs)
+        
+        # 找到選中的變更紀錄
+        change_record = next(c for c in changes if f"{c['ChangeDate']} - {c['ChangeDoc']}" == selected_change)
 
     if st.button("刪除"):
         response = delete_change_record(project_id, change_record["ID"])
@@ -264,31 +383,73 @@ tab1, tab2, tab3 = st.tabs(["💰修正預算總表", "🔄工程編號變更", 
 
 with tab1:
 
-    st.dataframe(
-        df[[
-            '工程編號', '工程名稱', '原金額', '新金額', '變更原因', '變更日期', '文號'
-        ]].style.format({
-            '原金額': format_currency,
-            '新金額': format_currency,
-            '變更日期': lambda x: pd.to_datetime(x).strftime('%Y-%m-%d')
-        }),
-        width='stretch',
-        hide_index=True
-    )
+    # 準備表格資料，添加隱藏欄位用於儲存完整資訊
+    if not df.empty:
+        # 添加隱藏欄位來儲存變更記錄的完整資訊
+        df_display = df.copy()
+        df_display['_change_id'] = df.get('ID', '')
+        df_display['_project_id'] = df['工程編號']
+        
+        # 使用 st.dataframe 的 on_select 參數實現行選擇
+        event = st.dataframe(
+            df_display[[
+                '工程編號', '工程名稱', '原金額', '新金額', '變更原因', '變更日期', '文號'
+            ]].style.format({
+                '原金額': format_currency,
+                '新金額': format_currency,
+                '變更日期': lambda x: pd.to_datetime(x).strftime('%Y-%m-%d')
+            }),
+            width='stretch',
+            hide_index=True,
+            on_select="rerun",
+            selection_mode="single-row",
+            key="change_selection"
+        )
+        
+        # 獲取選中的行
+        selected_rows = event.selection.rows if event.selection else []
+    else:
+        st.info("目前沒有變更紀錄")
+        selected_rows = []
 
-    col1, col2, col3 = st.columns(3)
+    st.divider()
+
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         if st.button("📝新增變更紀錄", width='stretch'):
             add_change_record_ui()
 
     with col2:
-        if st.button("✏️編輯變更紀錄", width='stretch'):
-            update_change_record_ui()
+        if st.button("📋批次新增", width='stretch'):
+            add_change_records()
 
     with col3:
-        if st.button("🗑️刪除變更紀錄", width='stretch'):
-            delete_change_record_ui()
+        # 編輯按鈕 - 需要選中一個變更紀錄
+        if selected_rows and len(selected_rows) == 1:
+            if st.button("✏️編輯變更紀錄", width='stretch'):
+                selected_record = df_display.iloc[selected_rows[0]]
+                # 將選中的記錄資訊存入 session_state
+                st.session_state.selected_change_record = {
+                    'project_id': selected_record['_project_id'],
+                    'change_id': selected_record['_change_id']
+                }
+                update_change_record_ui()
+        else:
+            st.button("✏️編輯變更紀錄", width='stretch', disabled=True)
+
+    with col4:
+        # 刪除按鈕 - 需要選中一個變更紀錄
+        if selected_rows and len(selected_rows) == 1:
+            if st.button("🗑️刪除變更紀錄", width='stretch'):
+                selected_record = df_display.iloc[selected_rows[0]]
+                st.session_state.selected_change_record = {
+                    'project_id': selected_record['_project_id'],
+                    'change_id': selected_record['_change_id']
+                }
+                delete_change_record_ui()
+        else:
+            st.button("🗑️刪除變更紀錄", width='stretch', disabled=True)
 
 # ===== 工程編號變更功能 =====
 
@@ -779,13 +940,6 @@ def edit_document_record_ui(selected_doc):
         # st.markdown("---")
         
         document_title = st.text_input("文件標題 *", value=selected_doc["DocumentTitle"])
-        # document_type = st.selectbox(
-        #     "文件類型",
-        #     ["公文", "會議紀錄", "報告", "計畫書", "其他"],
-        #     index=["公文", "會議紀錄", "報告", "計畫書", "其他"].index(selected_doc["DocumentType"]) 
-        #         if selected_doc.get("DocumentType") in ["公文", "會議紀錄", "報告", "計畫書", "其他"] 
-        #         else 0
-        # )
         
         doc_date = selected_doc.get("DocumentDate")
         if doc_date:
@@ -940,11 +1094,15 @@ with tab3:
     st.divider()
     
     # 操作按鈕
-    col1, col2, col3,col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     
     with col1:
         if st.button(" :star: 新增文件記錄", width='stretch'):
             add_document_record_ui()
+    
+    with col5:
+        if st.button("📋 批次新增", width='stretch'):
+            batch_add_document_record_ui()
     
     with col2:
         if st.button("📄 查看PDF", width='stretch'):
