@@ -3,7 +3,7 @@ import pandas as pd
 import time
 
 from convert import get_plans_df,get_projects_df,get_status_emoji,get_workstations_df
-from api import get_plans,get_plan,create_project,update_project,create_project_dates
+from api import get_plans,get_plan,create_project,update_project,create_project_dates,delete_project
 
 @st.dialog("🗂️ 匯入計畫明細")
 def import_excel():
@@ -151,6 +151,33 @@ def create_project_ui(plan_id):
         st.cache_data.clear()
         st.rerun()
 
+@st.dialog("🗑️刪除工程")
+def delete_project_ui(project):
+    project_id = project["工程編號"]
+    project_name = project["工程名稱"]
+    current_status = project["目前狀態"]
+
+    st.write(f"工程編號: {project_id}")
+    st.write(f"工程名稱: {project_name}")
+    st.write(f"目前狀態: {current_status}")
+
+    if current_status not in ["提報", "核定"]:
+        st.warning("只有「提報」或「核定」狀態的工程可以刪除")
+        return
+
+    st.error("刪除後將無法恢復，確定要刪除嗎？")
+
+    if st.button("確認刪除", type="secondary", use_container_width=True):
+        response = delete_project(project_id)
+        if response.get("message") == "Project deleted successfully":
+            st.toast("刪除成功", icon="✅")
+            time.sleep(1)
+            st.cache_data.clear()
+            st.rerun()
+        else:
+            st.toast("刪除失敗", icon="❌")
+            st.write(response)
+
 # ##### MAIN UI #####
 
 
@@ -188,13 +215,30 @@ df = get_projects_df()
 
 df = df[df["計畫編號"] == plan_id]
 
+raw_df = df.copy()
 df["目前狀態"] = df["目前狀態"].map(get_status_emoji) + " " + df["目前狀態"]
 
-st.dataframe(df,hide_index=True,column_config={"計畫編號":None,"建立時間":None})
+event = st.dataframe(
+    df,
+    hide_index=True,
+    column_config={"計畫編號": None, "建立時間": None},
+    on_select="rerun",
+    selection_mode="single-row",
+)
 
 if st.sidebar.button("🗂️ 匯入計畫明細"):
     import_excel()
 
 if st.button("新增工程",icon="➕"):
     create_project_ui(plan_id)
+
+selected_rows = event.selection.rows
+selected_project = raw_df.iloc[selected_rows[0]].to_dict() if selected_rows else None
+can_delete = selected_project is not None and selected_project["目前狀態"] in ["提報", "核定"]
+
+if st.button("刪除工程", icon="🗑️", disabled=selected_project is None):
+    if can_delete:
+        delete_project_ui(selected_project)
+    else:
+        st.warning("只能刪除狀態為「提報」或「核定」的工程")
 
